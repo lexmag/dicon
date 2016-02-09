@@ -12,12 +12,23 @@ defmodule Dicon.SecureShell do
       |> put_option(:password, passwd)
       |> put_option(:user_dir, user_dir)
     host = String.to_char_list(host)
+    :ok = ensure_started()
     :ssh.connect(host, port, opts, @timeout)
   end
 
   defp put_option(opts, _key, nil), do: opts
   defp put_option(opts, key, value) do
     [{key, String.to_char_list(value)} | opts]
+  end
+
+  defp ensure_started() do
+    case :ssh.start do
+      :ok -> :ok
+      {:error, {:already_started, :ssh}} -> :ok
+      {:error, reason} ->
+        Mix.raise "Could not start ssh application: " <>
+          Application.format_error(reason)
+    end
   end
 
   defp parse_elements(authority) do
