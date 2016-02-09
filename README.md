@@ -13,3 +13,7 @@ end
 ```
 
 After you are done, run `mix deps.get` in your shell to fetch the dependencies.
+
+## License
+
+This software is licensed under [the ISC license](LICENSE).
