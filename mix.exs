@@ -3,13 +3,25 @@ defmodule Dicon.Mixfile do
 
   def project() do
     [app: :dicon,
-     version: "0.0.1",
+     version: "0.1.0",
      elixir: "~> 1.1",
      build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod]
+     start_permanent: Mix.env == :prod,
+     package: package(),
+     description: description()]
   end
 
   def application() do
     [applications: [:logger, :ssh]]
+  end
+
+  defp package() do
+    [maintainers: ["Aleksei Magusev"],
+     licenses: ["ISC"],
+     links: %{"GitHub" => "https://github.com/lexmag/dicon"}]
+  end
+
+  defp description() do
+    "Simple release deliverer for Elixir"
   end
 end

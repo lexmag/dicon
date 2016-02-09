@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/lexmag/dicon.svg?branch=master "Build Status")](https://travis-ci.org/lexmag/dicon)
 
+Simple release deliverer for Elixir.
+
 ## Installation
 
 Add dicon as a dependency in your `mix.exs` file:
