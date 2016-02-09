@@ -21,6 +21,8 @@ defmodule Mix.Tasks.Dicon.ControlTest do
 
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["test/current/bin/sample run"]}
+
+    refute_receive _any
   end
 
   test "the task only accepts one argument" do
