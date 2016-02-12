@@ -23,10 +23,16 @@ defmodule Mix.Tasks.Dicon.Control do
   alias Dicon.Executor
 
   def run(argv) do
-    {_opts, [command], []} = OptionParser.parse(argv)
-    for {_name, authority} <- config(:hosts) do
-      conn = Executor.connect(authority)
-      exec(conn, config(:target_dir), command)
+    case OptionParser.parse(argv, strict: []) do
+      {_opts, [command], []} ->
+        for {_name, authority} <- config(:hosts) do
+          conn = Executor.connect(authority)
+          exec(conn, config(:target_dir), command)
+        end
+      {_opts, _commands, [switch | _]} ->
+        Mix.raise "Invalid option: " <> Mix.Dicon.switch_to_string(switch)
+      {_opts, _commands, _errors} ->
+        Mix.raise "Expected a single argument (the command to execute)"
     end
   end
 

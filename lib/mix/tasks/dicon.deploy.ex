@@ -26,12 +26,18 @@ defmodule Mix.Tasks.Dicon.Deploy do
   alias Dicon.Executor
 
   def run(argv) do
-    {_opts, [source], []} = OptionParser.parse(argv)
-    target_dir = config(:target_dir)
-    for {_name, authority} <- config(:hosts) do
-      conn = Executor.connect(authority)
-      release_file = upload(conn, [source], target_dir)
-      unpack(conn, release_file, [target_dir, "/current"])
+    case OptionParser.parse(argv, strict: []) do
+      {_opts, [source], []} ->
+        target_dir = config(:target_dir)
+        for {_name, authority} <- config(:hosts) do
+          conn = Executor.connect(authority)
+          release_file = upload(conn, [source], target_dir)
+          unpack(conn, release_file, [target_dir, "/current"])
+        end
+      {_opts, _commands, [switch | _]} ->
+        Mix.raise "Invalid option: " <> Mix.Dicon.switch_to_string(switch)
+      {_opts, _commands, _errors} ->
+        Mix.raise "Expected a single argument (the command to execute)"
     end
   end
 
