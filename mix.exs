@@ -8,6 +8,7 @@ defmodule Dicon.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      package: package(),
+     deps: deps,
      description: description()]
   end
 
@@ -23,5 +24,10 @@ defmodule Dicon.Mixfile do
 
   defp description() do
     "Simple release deliverer for Elixir"
+  end
+
+  defp deps() do
+    [{:earmark, ">= 0.0.0", only: :docs},
+     {:ex_doc, ">= 0.0.0", only: :docs}]
   end
 end
