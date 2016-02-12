@@ -3,7 +3,7 @@ defmodule Mix.Tasks.Dicon.ControlTest do
 
   setup do
     config = %{
-      app_name: "sample",
+      otp_app: :sample,
       target_dir: "test",
       hosts: [one: "one", two: "two"]
     }
