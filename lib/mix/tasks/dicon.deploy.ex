@@ -1,6 +1,26 @@
 defmodule Mix.Tasks.Dicon.Deploy do
   use Mix.Task
 
+  @shortdoc "Uploads a tarball to the configured server"
+
+  @moduledoc """
+  This task uploads the specified tarball on the configured server.
+
+  The configured server is picked up from the application's configuration; read
+  the `Dicon` documentation for more information.
+
+  This task only accepts a single argument, which is the tarball to upload.
+
+  ## Usage
+
+      mix dicon.deply TARBALL
+
+  ## Examples
+
+      mix dicon.deploy my_app-1.0.0.tar.gz
+
+  """
+
   import Dicon, only: [config: 1]
 
   alias Dicon.Executor

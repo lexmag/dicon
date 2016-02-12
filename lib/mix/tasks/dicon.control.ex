@@ -1,6 +1,23 @@
 defmodule Mix.Tasks.Dicon.Control do
   use Mix.Task
 
+  @shortdoc "Execute a command on the remote release"
+
+  @moduledoc """
+  This task is used to execute commands on the remote release.
+
+  It accepts one argument and forwards that command to the remote release.
+
+  ## Usage
+
+      mix dicon.control COMMAND
+
+  ## Examples
+
+      mix dicon.control ping
+
+  """
+
   import Dicon, only: [config: 1]
 
   alias Dicon.Executor

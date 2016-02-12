@@ -1,4 +1,26 @@
 defmodule Dicon.SecureShell do
+  @moduledoc """
+  A `Dicon.Executor` based on SSH.
+
+  ## Configuration
+
+  The configuration for this executor must be specified under the configuration
+  for the `:dicon` application:
+
+      config :dicon, Dicon.SecureShell,
+        dir: "..."
+
+  The available configuration options for this executor are:
+
+    * `:dir` - a binary that specifies the directory where the SSH keys are (in
+      the local machine). Defaults to `"~/.ssh"`.
+
+  The username and password user to connect to the server will be picked up by
+  the URL that identifies that server (in `:dicon`'s configuration); read more
+  about this in the documentation for the `Dicon` module.
+
+  """
+
   @behaviour Dicon.Executor
 
   @timeout 5_000
