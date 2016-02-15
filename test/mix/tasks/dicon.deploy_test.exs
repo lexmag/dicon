@@ -15,25 +15,31 @@ defmodule Mix.Tasks.Dicon.DeployTest do
 
   test "the release is uploaded correctly" do
     source = fixture_path("empty.tar.gz")
-    run([source])
+    run([source, "0.1.0"])
+
+    release_file = "test/release.tar.gz"
 
     assert_receive {:dicon, ref, :connect, ["one"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
-    assert_receive {:dicon, ^ref, :copy, [^source, "test/release.tar.gz"]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/current"]}
-    assert_receive {:dicon, ^ref, :exec, ["tar -C test/current -zxf test/release.tar.gz"]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0"]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
 
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
-    assert_receive {:dicon, ^ref, :copy, [^source, "test/release.tar.gz"]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/current"]}
-    assert_receive {:dicon, ^ref, :exec, ["tar -C test/current -zxf test/release.tar.gz"]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0"]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
+
+    refute_receive _any
   end
 
-  test "the task only accepts one argument" do
-    message = "Expected a single argument (the command to execute)"
+  test "it accepts only two arguments" do
+    message = "Expected two arguments (the tarball path and the version)"
     assert_raise Mix.Error, message, fn -> run([]) end
-    assert_raise Mix.Error, message, fn -> run(~w(one two)) end
+    assert_raise Mix.Error, message, fn -> run(~w(one)) end
 
     message = "Invalid option: --invalid"
     assert_raise Mix.Error, message, fn -> run(~w(--invalid option)) end
