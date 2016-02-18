@@ -36,21 +36,21 @@ defmodule DiconTest.Case do
   end
 
   def connect(authority) do
-    ref = make_ref()
-    notify_test({:dicon, ref, :connect, [authority]})
-    {:ok, ref}
+    id = make_ref()
+    notify_test({:dicon, id, :connect, [authority]})
+    {:ok, id}
   end
 
-  def exec(ref, command) do
+  def exec(id, command) do
     command = List.to_string(command)
-    notify_test({:dicon, ref, :exec, [command]})
+    notify_test({:dicon, id, :exec, [command]})
     :ok
   end
 
-  def copy(ref, source, target) do
+  def copy(id, source, target) do
     source = List.to_string(source)
     target = List.to_string(target)
-    notify_test({:dicon, ref, :copy, [source, target]})
+    notify_test({:dicon, id, :copy, [source, target]})
     :ok
   end
 

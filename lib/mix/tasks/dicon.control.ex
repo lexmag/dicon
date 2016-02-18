@@ -41,6 +41,6 @@ defmodule Mix.Tasks.Dicon.Control do
   defp exec(conn, target_dir, command) do
     otp_app = config(:otp_app) |> Atom.to_string
     command = [target_dir, "/current/bin/", otp_app, ?\s, command]
-    :ok = Executor.exec(conn, command)
+    Executor.exec(conn, command)
   end
 end
