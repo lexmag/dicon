@@ -86,7 +86,7 @@ defmodule Dicon.Executor do
     end
   end
 
-  defp raise_error(executor_mod, reason) when is_binary(reason) do
-    Mix.raise "(in #{inspect executor_mod}) " <> reason
+  defp raise_error(executor, reason) when is_binary(reason) do
+    Mix.raise "(in #{inspect executor}) " <> reason
   end
 end
