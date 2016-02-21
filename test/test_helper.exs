@@ -1,4 +1,4 @@
-ExUnit.start
+ExUnit.start(refute_receive_timeout: 200)
 
 defmodule PathHelpers do
   def fixtures_path() do
@@ -14,6 +14,12 @@ defmodule DiconTest.Case do
   use ExUnit.CaseTemplate
 
   @behaviour Dicon.Executor
+
+  using _ do
+    quote do
+      import unquote(__MODULE__), only: [flush_reply: 1]
+    end
+  end
 
   setup_all do
     Application.put_env(:dicon, :executor, __MODULE__)
@@ -51,5 +57,14 @@ defmodule DiconTest.Case do
   defp notify_test(message) do
     test_pid = Application.fetch_env!(:dicon, __MODULE__)
     send(test_pid, message)
+  end
+
+  def flush_reply(ref) do
+    receive do
+      {:dicon, ^ref, _, _} ->
+        flush_reply(ref)
+    after
+      50 -> :ok
+    end
   end
 end

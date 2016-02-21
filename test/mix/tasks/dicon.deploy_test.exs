@@ -15,9 +15,9 @@ defmodule Mix.Tasks.Dicon.DeployTest do
 
   test "the release is uploaded correctly" do
     source = fixture_path("empty.tar.gz")
-    run([source, "0.1.0"])
-
     release_file = "test/release.tar.gz"
+
+    run([source, "0.1.0"])
 
     assert_receive {:dicon, ref, :connect, ["one"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
@@ -33,6 +33,33 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
     assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
 
+    refute_receive _any
+  end
+
+  test "hosts filtering" do
+    source = fixture_path("empty.tar.gz")
+
+    run([source, "0.1.0", "--only", "one"])
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run([source, "0.1.0", "--skip", "one"])
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run([source, "0.1.0", "--skip", "one", "--only", "one"])
+    refute_receive _any
+
+    run([source, "0.1.0", "--only", "one", "--only", "two"])
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    :ok = flush_reply(ref)
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run([source, "0.1.0", "--skip", "one", "--skip", "two"])
     refute_receive _any
   end
 

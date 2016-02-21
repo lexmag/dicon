@@ -21,15 +21,17 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
   """
 
-  import Dicon, only: [config: 1]
+  import Dicon, only: [config: 1, config: 2]
 
   alias Dicon.Executor
 
+  @options [strict: [only: :keep, skip: :keep]]
+
   def run(argv) do
-    case OptionParser.parse(argv, strict: []) do
-      {_opts, [source, version], []} ->
+    case OptionParser.parse(argv, @options) do
+      {opts, [source, version], []} ->
         target_dir = config(:target_dir)
-        for {_name, authority} <- config(:hosts) do
+        for {_name, authority} <- config(:hosts, opts) do
           conn = Executor.connect(authority)
           release_file = upload(conn, [source], target_dir)
           unpack(conn, release_file, [target_dir, ?/, version])

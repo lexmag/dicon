@@ -37,7 +37,29 @@ defmodule Dicon do
   """
 
   @doc false
-  def config(key) do
+  def config(key, opts \\ [])
+
+  def config(:hosts, opts) do
+    only = Keyword.get_values(opts, :only)
+    skip = Keyword.get_values(opts, :skip)
+
+    fun = hosts_selector(only, skip)
+
+    Application.fetch_env!(:dicon, :hosts)
+    |> Enum.filter(fun)
+  end
+
+  def config(key, _opts) do
     Application.fetch_env!(:dicon, key)
+  end
+
+  def hosts_selector([], skip) do
+    skip = Enum.map(skip, &String.to_atom/1)
+    fn {name, _} -> not(name in skip) end
+  end
+
+  def hosts_selector(only, skip) do
+    only = Enum.map(only -- skip, &String.to_atom/1)
+    fn {name, _} -> (name in only) end
   end
 end
