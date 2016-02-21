@@ -18,14 +18,16 @@ defmodule Mix.Tasks.Dicon.Control do
 
   """
 
-  import Dicon, only: [config: 1]
+  import Dicon, only: [config: 1, config: 2]
 
   alias Dicon.Executor
 
+  @options [strict: [only: :keep, skip: :keep]]
+
   def run(argv) do
-    case OptionParser.parse(argv, strict: []) do
-      {_opts, [command], []} ->
-        for {_name, authority} <- config(:hosts) do
+    case OptionParser.parse(argv, @options) do
+      {opts, [command], []} ->
+        for {_name, authority} <- config(:hosts, opts) do
           conn = Executor.connect(authority)
           exec(conn, config(:target_dir), command)
         end

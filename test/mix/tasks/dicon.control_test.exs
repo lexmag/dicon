@@ -25,6 +25,38 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     refute_receive _any
   end
 
+  test "hosts filtering" do
+    config = %{
+      otp_app: :sample,
+      target_dir: "test",
+      hosts: [one: "one", two: "two"]
+    }
+    Mix.Config.persist(dicon: config)
+
+    run(["run", "--only", "one"])
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run(["run", "--skip", "one"])
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run(["run", "--skip", "one", "--only", "one"])
+    refute_receive _any
+
+    run(["run", "--only", "one", "--only", "two"])
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    :ok = flush_reply(ref)
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run(["run", "--skip", "one", "--skip", "two"])
+    refute_receive _any
+  end
+
   test "the task only accepts one argument" do
     message = "Expected a single argument (the command to execute)"
     assert_raise Mix.Error, message, fn -> run([]) end
