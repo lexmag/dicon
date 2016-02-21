@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
   test "relative path" do
     config = %{
       target_dir: "test",
-      hosts: [one: "one", two: "two"],
+      hosts: [one: "one", two: "two"]
     }
     Mix.Config.persist(dicon: config)
 
@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
   test "absolute path" do
     config = %{
       target_dir: "/home/test",
-      hosts: [one: "one"],
+      hosts: [one: "one"]
     }
     Mix.Config.persist(dicon: config)
 
@@ -33,6 +33,37 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     assert_receive {:dicon, ref, :connect, ["one"]}
     assert_receive {:dicon, ^ref, :exec, ["ln -snf /home/test/0.2.0 /home/test/current"]}
 
+    refute_receive _any
+  end
+
+  test "hosts filtering" do
+    config = %{
+      target_dir: "test",
+      hosts: [one: "one", two: "two"]
+    }
+    Mix.Config.persist(dicon: config)
+
+    run(["0.2.0", "--only", "one"])
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run(["0.2.0", "--skip", "one"])
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run(["0.2.0", "--skip", "one", "--only", "one"])
+    refute_receive _any
+
+    run(["0.2.0", "--only", "one", "--only", "two"])
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    :ok = flush_reply(ref)
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    :ok = flush_reply(ref)
+    refute_receive _any
+
+    run(["0.2.0", "--skip", "one", "--skip", "two"])
     refute_receive _any
   end
 

@@ -1,19 +1,21 @@
 defmodule Mix.Tasks.Dicon.Switch do
   use Mix.Task
 
-  import Dicon, only: [config: 1]
+  import Dicon, only: [config: 1, config: 2]
 
   alias Dicon.Executor
 
+  @options [strict: [only: :keep, skip: :keep]]
+
   def run(argv) do
-    case OptionParser.parse(argv, strict: []) do
-      {_opts, [version], []} ->
+    case OptionParser.parse(argv, @options) do
+      {opts, [version], []} ->
         target_dir =
           case config(:target_dir) do
             "/" <> _ = dir -> dir
             dir -> ["$PWD", ?/, dir]
           end
-        for {_name, authority} <- config(:hosts) do
+        for {_name, authority} <- config(:hosts, opts) do
           conn = Executor.connect(authority)
           symlink(conn, [target_dir, ?/, version], [target_dir, "/current"])
         end
