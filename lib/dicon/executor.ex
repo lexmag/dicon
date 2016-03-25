@@ -15,9 +15,10 @@ defmodule Dicon.Executor do
   @callback connect(authority :: binary) :: {:ok, identifier} | {:error, binary}
 
   @doc """
-  Executes the given `command` on the given connection.
+  Executes the given `command` on the given connection, writing the output of
+  `command` to `device`.
   """
-  @callback exec(identifier, command :: char_list) :: :ok | {:error, binary}
+  @callback exec(identifier, command :: char_list, device :: atom | pid) :: :ok | {:error, binary}
 
   @doc """
   Copies the local file `source` over to the destination `target` on the given
@@ -60,8 +61,8 @@ defmodule Dicon.Executor do
       #=> :ok
 
   """
-  def exec(%__MODULE__{} = state, command) do
-    run(state, :exec, [command])
+  def exec(%__MODULE__{} = state, command, device \\ Process.group_leader()) do
+    run(state, :exec, [command, device])
   end
 
   @doc """

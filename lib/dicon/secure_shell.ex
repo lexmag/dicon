@@ -79,25 +79,25 @@ defmodule Dicon.SecureShell do
     {user, passwd, host, port}
   end
 
-  def exec(conn, command) do
+  def exec(conn, command, device) do
     result =
       with {:ok, channel} <- :ssh_connection.session_channel(conn, @timeout),
            :success <- :ssh_connection.exec(conn, channel, command, @timeout),
-        do: handle_reply(conn, channel, [])
+        do: handle_reply(conn, channel, device, [])
 
     format_if_error(result)
   end
 
-  defp handle_reply(conn, channel, acc) do
+  defp handle_reply(conn, channel, device, acc) do
     receive do
       {:ssh_cm, ^conn, {:data, ^channel, _code, data}} ->
-        handle_reply(conn, channel, [acc | data])
+        handle_reply(conn, channel, device, [acc | data])
       {:ssh_cm, ^conn, {:eof, ^channel}} ->
-        handle_reply(conn, channel, acc)
+        handle_reply(conn, device, channel, acc)
       {:ssh_cm, ^conn, {:exit_status, ^channel, _status}} ->
-        handle_reply(conn, channel, acc)
+        handle_reply(conn, device, channel, acc)
       {:ssh_cm, ^conn, {:closed, ^channel}} ->
-        IO.write(acc)
+        IO.write(device, acc)
     after
       @timeout -> {:error, :timeout}
     end

@@ -9,8 +9,8 @@ defmodule Dicon.ExecutorTest do
     def connect(:fail), do: {:error, "connect failed"}
     def connect(term), do: {:ok, term}
 
-    def exec(_conn, :fail), do: {:error, "exec failed"}
-    def exec(_conn, _command), do: :ok
+    def exec(_conn, :fail, _device), do: {:error, "exec failed"}
+    def exec(_conn, _command, _device), do: :ok
 
     def copy(_conn, :fail, :fail), do: {:error, "copy failed"}
     def copy(_conn, _source, _target), do: :ok
