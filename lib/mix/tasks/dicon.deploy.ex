@@ -44,20 +44,20 @@ defmodule Mix.Tasks.Dicon.Deploy do
   end
 
   defp ensure_dir(conn, path) do
-    :ok = Executor.exec(conn, ["mkdir -p ", path])
+    Executor.exec(conn, ["mkdir -p ", path])
   end
 
   defp upload(conn, source, target_dir) do
-    :ok = ensure_dir(conn, target_dir)
+    ensure_dir(conn, target_dir)
     release_file = [target_dir, "/release.tar.gz"]
-    :ok = Executor.copy(conn, source, release_file)
+    Executor.copy(conn, source, release_file)
     release_file
   end
 
   defp unpack(conn, release_file, target_dir) do
-    :ok = ensure_dir(conn, target_dir)
+    ensure_dir(conn, target_dir)
     command = ["tar -C ", target_dir, " -zxf ", release_file]
-    :ok = Executor.exec(conn, command)
-    :ok = Executor.exec(conn, ["rm ", release_file])
+    Executor.exec(conn, command)
+    Executor.exec(conn, ["rm ", release_file])
   end
 end

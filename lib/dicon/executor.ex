@@ -12,20 +12,22 @@ defmodule Dicon.Executor do
   Connects to the given authority, returning a term that identifies the
   connection.
   """
-  @callback connect(authority :: binary) :: {:ok, identifier} | {:error, term}
+  @callback connect(authority :: binary) :: {:ok, identifier} | {:error, binary}
 
   @doc """
   Executes the given `command` on the given connection.
   """
-  @callback exec(identifier, command :: char_list) :: :ok
+  @callback exec(identifier, command :: char_list) :: :ok | {:error, binary}
 
   @doc """
   Copies the local file `source` over to the destination `target` on the given
   connection.
   """
-  @callback copy(identifier, source :: char_list, target :: char_list) :: :ok
+  @callback copy(identifier, source :: char_list, target :: char_list) :: :ok | {:error, binary}
 
-  defstruct [:module, :ref]
+  @type t :: %__MODULE__{executor: module, id: identifier}
+
+  defstruct [:executor, :id]
 
   @doc """
   Connects to authority.
@@ -39,10 +41,13 @@ defmodule Dicon.Executor do
       %Dicon.Executor{} = Dicon.Executor.connect("meg:secret@example.com")
 
   """
+  @spec connect(binary) :: {:ok, t} | {:error, term}
   def connect(authority) do
-    module = Application.get_env(:dicon, :executor, SecureShell)
-    {:ok, ref} = module.connect(authority)
-    %__MODULE__{module: module, ref: ref}
+    executor = Application.get_env(:dicon, :executor, SecureShell)
+    case executor.connect(authority) do
+      {:ok, id}        -> %__MODULE__{executor: executor, id: id}
+      {:error, reason} -> raise_error(executor, reason)
+    end
   end
 
   @doc """
@@ -56,7 +61,7 @@ defmodule Dicon.Executor do
 
   """
   def exec(%__MODULE__{} = state, command) do
-    :ok = run(state, :exec, [command])
+    run(state, :exec, [command])
   end
 
   @doc """
@@ -71,10 +76,17 @@ defmodule Dicon.Executor do
 
   """
   def copy(%__MODULE__{} = state, source, target) do
-    :ok = run(state, :copy, [source, target])
+    run(state, :copy, [source, target])
   end
 
-  defp run(%{module: module, ref: ref}, fun, args) do
-    apply(module, fun, [ref | args])
+  defp run(%{executor: executor, id: id}, fun, args) do
+    case apply(executor, fun, [id | args]) do
+      {:error, reason} -> raise_error(executor, reason)
+      :ok              -> :ok
+    end
+  end
+
+  defp raise_error(executor, reason) when is_binary(reason) do
+    Mix.raise "(in #{inspect executor}) " <> reason
   end
 end
