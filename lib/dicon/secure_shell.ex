@@ -93,9 +93,9 @@ defmodule Dicon.SecureShell do
       {:ssh_cm, ^conn, {:data, ^channel, _code, data}} ->
         handle_reply(conn, channel, device, [acc | data])
       {:ssh_cm, ^conn, {:eof, ^channel}} ->
-        handle_reply(conn, device, channel, acc)
+        handle_reply(conn, channel, device, acc)
       {:ssh_cm, ^conn, {:exit_status, ^channel, _status}} ->
-        handle_reply(conn, device, channel, acc)
+        handle_reply(conn, channel, device, acc)
       {:ssh_cm, ^conn, {:closed, ^channel}} ->
         IO.write(device, acc)
     after
