@@ -41,7 +41,7 @@ defmodule DiconTest.Case do
     {:ok, id}
   end
 
-  def exec(id, command) do
+  def exec(id, command, _device) do
     command = List.to_string(command)
     notify_test({:dicon, id, :exec, [command]})
     :ok
