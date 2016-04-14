@@ -109,11 +109,11 @@ defmodule Dicon.SecureShell do
            stream = File.stream!(source, [], div(size, 100)),
            {:ok, channel} <- :ssh_sftp.start_channel(conn, [timeout: @timeout]),
            {:ok, handle} <- :ssh_sftp.open(channel, target, [:write, :binary], @timeout),
-           Enum.each(stream, fn chunk ->
+           Enum.with_index(stream, fn(chunk, percent) ->
              # TODO: we need to remove this assertion here as well, once we have a
              # better "streaming" API.
              :ok = :ssh_sftp.write(channel, handle, chunk, @timeout)
-             IO.write "."
+             write_progress_bar(percent)
            end),
            IO.puts("\n"),
            :ok <- :ssh_sftp.close(channel, handle, @timeout),
@@ -121,6 +121,13 @@ defmodule Dicon.SecureShell do
         do: :ok
 
     format_if_error(result)
+  end
+
+  defp write_progress_bar(percent) when percent in 1..100 do
+    done = String.duplicate("═", percent)
+    rest = String.duplicate(" ", 100 - percent)
+    IO.ANSI.format([:clear_line, ?\r, ?╎, done, rest, ?╎, ?\s, Integer.to_string(percent), ?%])
+    |> IO.write
   end
 
   defp format_if_error(:failure) do
