@@ -106,10 +106,10 @@ defmodule Dicon.SecureShell do
   def copy(conn, source, target) do
     result =
       with {:ok, %File.Stat{size: size}} <- File.stat(source),
-           stream = File.stream!(source, [], div(size, 100)),
+           stream = File.stream!(source, [], div(size, 99)) |> Stream.with_index(1),
            {:ok, channel} <- :ssh_sftp.start_channel(conn, [timeout: @timeout]),
            {:ok, handle} <- :ssh_sftp.open(channel, target, [:write, :binary], @timeout),
-           Enum.with_index(stream, fn(chunk, percent) ->
+           Enum.each(stream, fn {chunk, percent} ->
              # TODO: we need to remove this assertion here as well, once we have a
              # better "streaming" API.
              :ok = :ssh_sftp.write(channel, handle, chunk, @timeout)
