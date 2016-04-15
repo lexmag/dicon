@@ -15,8 +15,9 @@ defmodule Mix.Tasks.Dicon.Switch do
             "/" <> _ = dir -> dir
             dir -> ["$PWD", ?/, dir]
           end
-        for {_name, authority} <- config(:hosts, opts) do
+        for {name, authority} <- config(:hosts, opts) do
           conn = Executor.connect(authority)
+          Mix.shell.info "Connected to #{inspect name} at #{authority}"
           symlink(conn, [target_dir, ?/, version], [target_dir, "/current"])
         end
       {_opts, _commands, [switch | _]} ->

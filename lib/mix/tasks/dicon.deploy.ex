@@ -33,6 +33,7 @@ defmodule Mix.Tasks.Dicon.Deploy do
         target_dir = config(:target_dir)
         for {name, authority} <- config(:hosts, opts) do
           conn = Executor.connect(authority)
+          Mix.shell.info "Connected to #{inspect name} at #{authority}"
           release_file = upload(conn, [source], target_dir)
           target_dir = [target_dir, ?/, version]
           unpack(conn, release_file, target_dir)

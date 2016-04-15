@@ -27,8 +27,9 @@ defmodule Mix.Tasks.Dicon.Control do
   def run(argv) do
     case OptionParser.parse(argv, @options) do
       {opts, [command], []} ->
-        for {_name, authority} <- config(:hosts, opts) do
+        for {name, authority} <- config(:hosts, opts) do
           conn = Executor.connect(authority)
+          Mix.shell.info "Connected to #{inspect name} at #{authority}"
           exec(conn, config(:target_dir), command)
         end
       {_opts, _commands, [switch | _]} ->
