@@ -12,6 +12,9 @@ defmodule Dicon.ExecutorTest do
     def exec(_conn, :fail, _device), do: {:error, "exec failed"}
     def exec(_conn, _command, _device), do: :ok
 
+    def write_file(_conn, :fail, "fail", _mode), do: {:error, "copy failed"}
+    def write_file(_conn, _target, _content, _mode), do: :ok
+
     def copy(_conn, :fail, :fail), do: {:error, "copy failed"}
     def copy(_conn, _source, _target), do: :ok
   end
@@ -44,5 +47,16 @@ defmodule Dicon.ExecutorTest do
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) copy failed"
     assert_raise Mix.Error, message, fn -> Executor.copy(conn, :fail, :fail) end
+  end
+
+  test "write_file/4" do
+    conn = Executor.connect(:whatever)
+
+    assert Executor.write_file(conn, :target, "content") == :ok
+
+    message = "(in Dicon.ExecutorTest.FakeExecutor) copy failed"
+    assert_raise Mix.Error, message, fn ->
+      Executor.write_file(conn, :fail, "fail")
+    end
   end
 end

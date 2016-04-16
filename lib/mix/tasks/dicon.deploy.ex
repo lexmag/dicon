@@ -21,7 +21,7 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
   """
 
-  import Dicon, only: [config: 1, config: 2]
+  import Dicon, only: [config: 1, config: 2, host_config: 1]
 
   alias Dicon.Executor
 
@@ -31,10 +31,12 @@ defmodule Mix.Tasks.Dicon.Deploy do
     case OptionParser.parse(argv, @options) do
       {opts, [source, version], []} ->
         target_dir = config(:target_dir)
-        for {_name, authority} <- config(:hosts, opts) do
+        for {name, authority} <- config(:hosts, opts) do
           conn = Executor.connect(authority)
           release_file = upload(conn, [source], target_dir)
-          unpack(conn, release_file, [target_dir, ?/, version])
+          target_dir = [target_dir, ?/, version]
+          unpack(conn, release_file, target_dir)
+          write_custom_config(conn, name, target_dir, version)
         end
       {_opts, _commands, [switch | _]} ->
         Mix.raise "Invalid option: " <> Mix.Dicon.switch_to_string(switch)
@@ -59,5 +61,19 @@ defmodule Mix.Tasks.Dicon.Deploy do
     command = ["tar -C ", target_dir, " -zxf ", release_file]
     Executor.exec(conn, command)
     Executor.exec(conn, ["rm ", release_file])
+  end
+
+  defp write_custom_config(conn, name, target_dir, version) do
+    if config = host_config(name) do
+      target_sub_dir = ["/releases/", version, ?/]
+      config_sub_path = [target_sub_dir, "custom.config"]
+
+      content = :io_lib.format('~p.\n', [config])
+      Executor.write_file(conn, [target_dir, config_sub_path], content)
+
+      vm_args_path = [target_dir, target_sub_dir, "vm.args"]
+      content = ["-config ", ?., config_sub_path, ?\n]
+      Executor.write_file(conn, vm_args_path, content, :append)
+    end
   end
 end

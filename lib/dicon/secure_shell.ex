@@ -103,6 +103,19 @@ defmodule Dicon.SecureShell do
     end
   end
 
+  def write_file(conn, target, content, mode) do
+    result =
+      with {:ok, channel} <- :ssh_sftp.start_channel(conn, [timeout: @timeout]),
+           {:ok, handle} <- :ssh_sftp.open(channel, target, [mode, :binary], @timeout),
+           {:ok, _} <- :ssh_sftp.position(channel, handle, :eof, @timeout),
+           :ok <- :ssh_sftp.write(channel, handle, content, @timeout),
+           :ok <- :ssh_sftp.close(channel, handle, @timeout),
+           :ok <- :ssh_sftp.stop_channel(channel),
+        do: :ok
+
+    format_if_error(result)
+  end
+
   def copy(conn, source, target) do
     result =
       with {:ok, %File.Stat{size: size}} <- File.stat(source),

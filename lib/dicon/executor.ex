@@ -20,6 +20,8 @@ defmodule Dicon.Executor do
   """
   @callback exec(identifier, command :: char_list, device :: atom | pid) :: :ok | {:error, binary}
 
+  @callback write_file(identifier, target :: char_list, content :: iodata, :write | :append) :: :ok | {:error, binary}
+
   @doc """
   Copies the local file `source` over to the destination `target` on the given
   connection.
@@ -78,6 +80,11 @@ defmodule Dicon.Executor do
   """
   def copy(%__MODULE__{} = state, source, target) do
     run(state, :copy, [source, target])
+  end
+
+  def write_file(%__MODULE__{} = state, target, content, mode \\ :write)
+  when mode in [:write, :append] and (is_binary(content) or is_list(content)) do
+    run(state, :write_file, [target, content, mode])
   end
 
   defp run(%{executor: executor, id: id}, fun, args) do

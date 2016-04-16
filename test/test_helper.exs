@@ -47,6 +47,13 @@ defmodule DiconTest.Case do
     :ok
   end
 
+  def write_file(id, target, content, mode) do
+    content = IO.iodata_to_binary(content)
+    target = List.to_string(target)
+    notify_test({:dicon, id, :write_file, [target, content, mode]})
+    :ok
+  end
+
   def copy(id, source, target) do
     source = List.to_string(source)
     target = List.to_string(target)

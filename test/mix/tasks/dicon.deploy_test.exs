@@ -8,6 +8,7 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     config = %{
       target_dir: "test",
       hosts: [one: "one", two: "two"],
+      one: [{:foo, bar: "baz"}]
     }
     Mix.Config.persist(dicon: config)
     :ok
@@ -25,6 +26,9 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0"]}
     assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
     assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
+
+    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/custom.config", "[{foo,[{bar,<<\"baz\">>}]}].\n", :write]}
+    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/vm.args", "-config ./releases/0.1.0/custom.config\n", :append]}
 
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
