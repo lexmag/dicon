@@ -36,28 +36,28 @@ defmodule DiconTest.Case do
   end
 
   def connect(authority) do
-    id = make_ref()
-    notify_test({:dicon, id, :connect, [authority]})
-    {:ok, id}
+    conn = make_ref()
+    notify_test({:dicon, conn, :connect, [authority]})
+    {:ok, conn}
   end
 
-  def exec(id, command, _device) do
+  def exec(conn, command, _device) do
     command = List.to_string(command)
-    notify_test({:dicon, id, :exec, [command]})
+    notify_test({:dicon, conn, :exec, [command]})
     :ok
   end
 
-  def write_file(id, target, content, mode) do
+  def write_file(conn, target, content, mode) do
     content = IO.iodata_to_binary(content)
     target = List.to_string(target)
-    notify_test({:dicon, id, :write_file, [target, content, mode]})
+    notify_test({:dicon, conn, :write_file, [target, content, mode]})
     :ok
   end
 
-  def copy(id, source, target) do
+  def copy(conn, source, target) do
     source = List.to_string(source)
     target = List.to_string(target)
-    notify_test({:dicon, id, :copy, [source, target]})
+    notify_test({:dicon, conn, :copy, [source, target]})
     :ok
   end
 
@@ -66,10 +66,10 @@ defmodule DiconTest.Case do
     send(test_pid, message)
   end
 
-  def flush_reply(ref) do
+  def flush_reply(conn) do
     receive do
-      {:dicon, ^ref, _, _} ->
-        flush_reply(ref)
+      {:dicon, ^conn, _, _} ->
+        flush_reply(conn)
     after
       50 -> :ok
     end

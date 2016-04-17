@@ -8,29 +8,31 @@ defmodule Dicon.Executor do
 
   alias Dicon.SecureShell
 
+  @type conn :: identifier | struct
+
+  @type t :: %__MODULE__{executor: module, conn: conn}
+
+  defstruct [:executor, :conn]
+
   @doc """
   Connects to the given authority, returning a term that identifies the
   connection.
   """
-  @callback connect(authority :: binary) :: {:ok, identifier} | {:error, binary}
+  @callback connect(authority :: binary) :: {:ok, conn} | {:error, binary}
 
   @doc """
   Executes the given `command` on the given connection, writing the output of
   `command` to `device`.
   """
-  @callback exec(identifier, command :: char_list, device :: atom | pid) :: :ok | {:error, binary}
+  @callback exec(conn, command :: char_list, device :: atom | pid) :: :ok | {:error, binary}
 
-  @callback write_file(identifier, target :: char_list, content :: iodata, :write | :append) :: :ok | {:error, binary}
+  @callback write_file(conn, target :: char_list, content :: iodata, :write | :append) :: :ok | {:error, binary}
 
   @doc """
   Copies the local file `source` over to the destination `target` on the given
   connection.
   """
-  @callback copy(identifier, source :: char_list, target :: char_list) :: :ok | {:error, binary}
-
-  @type t :: %__MODULE__{executor: module, id: identifier}
-
-  defstruct [:executor, :id]
+  @callback copy(conn, source :: char_list, target :: char_list) :: :ok | {:error, binary}
 
   @doc """
   Connects to authority.
@@ -48,7 +50,7 @@ defmodule Dicon.Executor do
   def connect(authority) do
     executor = Application.get_env(:dicon, :executor, SecureShell)
     case executor.connect(authority) do
-      {:ok, id}        -> %__MODULE__{executor: executor, id: id}
+      {:ok, conn} -> %__MODULE__{executor: executor, conn: conn}
       {:error, reason} -> raise_error(executor, reason)
     end
   end
@@ -87,8 +89,8 @@ defmodule Dicon.Executor do
     run(state, :write_file, [target, content, mode])
   end
 
-  defp run(%{executor: executor, id: id}, fun, args) do
-    case apply(executor, fun, [id | args]) do
+  defp run(%{executor: executor, conn: conn}, fun, args) do
+    case apply(executor, fun, [conn | args]) do
       {:error, reason} -> raise_error(executor, reason)
       :ok              -> :ok
     end
