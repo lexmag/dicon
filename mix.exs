@@ -3,7 +3,7 @@ defmodule Dicon.Mixfile do
 
   def project() do
     [app: :dicon,
-     version: "0.3.0",
+     version: "0.4.0",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
