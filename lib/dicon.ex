@@ -53,12 +53,12 @@ defmodule Dicon do
     Application.fetch_env!(:dicon, key)
   end
 
-  def hosts_selector([], skip) do
+  defp hosts_selector([], skip) do
     skip = Enum.map(skip, &String.to_atom/1)
     fn {name, _} -> not(name in skip) end
   end
 
-  def hosts_selector(only, skip) do
+  defp hosts_selector(only, skip) do
     only = Enum.map(only -- skip, &String.to_atom/1)
     fn {name, _} -> (name in only) end
   end
