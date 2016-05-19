@@ -78,4 +78,17 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     message = "Invalid option: --no-value"
     assert_raise Mix.Error, message, fn -> run(~w(--no-value)) end
   end
+
+  test "feedback is printed" do
+    config = %{
+      target_dir: "test",
+      hosts: [one: "one.com", two: "two.org"]
+    }
+    Mix.Config.persist(dicon: config)
+
+    run(["0.2.0"])
+
+    assert_receive {:mix_shell, :info, ["Connected to :one at one.com"]}
+    assert_receive {:mix_shell, :info, ["Connected to :two at two.org"]}
+  end
 end

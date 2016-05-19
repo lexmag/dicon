@@ -68,4 +68,10 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     message = "Invalid option: --no-value"
     assert_raise Mix.Error, message, fn -> run(~w(--no-value)) end
   end
+
+  test "feedback is printed" do
+    run(["run"])
+    assert_receive {:mix_shell, :info, ["Connected to :one at one"]}
+    assert_receive {:mix_shell, :info, ["Connected to :two at two"]}
+  end
 end
