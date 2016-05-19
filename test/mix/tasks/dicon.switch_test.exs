@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["ln -snf $PWD/test/0.1.0 $PWD/test/current"]}
 
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
   end
 
   test "absolute path" do
@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     assert_receive {:dicon, ref, :connect, ["one"]}
     assert_receive {:dicon, ^ref, :exec, ["ln -snf /home/test/0.2.0 /home/test/current"]}
 
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
   end
 
   test "hosts filtering" do
@@ -46,25 +46,25 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     run(["0.2.0", "--only", "one"])
     assert_receive {:dicon, ref, :connect, ["one"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["0.2.0", "--skip", "one"])
     assert_receive {:dicon, ref, :connect, ["two"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["0.2.0", "--skip", "one", "--only", "one"])
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["0.2.0", "--only", "one", "--only", "two"])
     assert_receive {:dicon, ref, :connect, ["one"]}
     :ok = flush_reply(ref)
     assert_receive {:dicon, ref, :connect, ["two"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["0.2.0", "--skip", "one", "--skip", "two"])
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
   end
 
   test "the task only accepts one argument" do

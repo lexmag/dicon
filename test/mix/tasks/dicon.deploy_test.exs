@@ -37,7 +37,7 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
     assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
 
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
   end
 
   test "hosts filtering" do
@@ -46,25 +46,25 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     run([source, "0.1.0", "--only", "one"])
     assert_receive {:dicon, ref, :connect, ["one"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run([source, "0.1.0", "--skip", "one"])
     assert_receive {:dicon, ref, :connect, ["two"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run([source, "0.1.0", "--skip", "one", "--only", "one"])
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run([source, "0.1.0", "--only", "one", "--only", "two"])
     assert_receive {:dicon, ref, :connect, ["one"]}
     :ok = flush_reply(ref)
     assert_receive {:dicon, ref, :connect, ["two"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run([source, "0.1.0", "--skip", "one", "--skip", "two"])
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
   end
 
   test "it accepts only two arguments" do

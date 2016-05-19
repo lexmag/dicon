@@ -22,7 +22,7 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["test/current/bin/sample run"]}
 
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
   end
 
   test "hosts filtering" do
@@ -36,25 +36,25 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     run(["run", "--only", "one"])
     assert_receive {:dicon, ref, :connect, ["one"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["run", "--skip", "one"])
     assert_receive {:dicon, ref, :connect, ["two"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["run", "--skip", "one", "--only", "one"])
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["run", "--only", "one", "--only", "two"])
     assert_receive {:dicon, ref, :connect, ["one"]}
     :ok = flush_reply(ref)
     assert_receive {:dicon, ref, :connect, ["two"]}
     :ok = flush_reply(ref)
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
 
     run(["run", "--skip", "one", "--skip", "two"])
-    refute_receive _any
+    refute_receive {:dicon, _, _, _}
   end
 
   test "the task only accepts one argument" do
