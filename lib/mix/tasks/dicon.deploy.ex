@@ -31,12 +31,14 @@ defmodule Mix.Tasks.Dicon.Deploy do
     case OptionParser.parse(argv, @options) do
       {opts, [source, version], []} ->
         target_dir = config(:target_dir)
-        for {name, authority} <- config(:hosts, opts) do
+        for host <- config(:hosts, opts) do
+          host_config = host_config(host)
+          authority = Keyword.fetch!(host_config, :authority)
           conn = Executor.connect(authority)
           release_file = upload(conn, [source], target_dir)
           target_dir = [target_dir, ?/, version]
           unpack(conn, release_file, target_dir)
-          write_custom_config(conn, name, target_dir, version)
+          write_custom_config(conn, host_config, target_dir, version)
         end
       {_opts, _commands, [switch | _]} ->
         Mix.raise "Invalid option: " <> Mix.Dicon.switch_to_string(switch)
@@ -63,8 +65,8 @@ defmodule Mix.Tasks.Dicon.Deploy do
     Executor.exec(conn, ["rm ", release_file])
   end
 
-  defp write_custom_config(conn, name, target_dir, version) do
-    if config = host_config(name) do
+  defp write_custom_config(conn, host_config, target_dir, version) do
+    if config = host_config[:apps_env] do
       target_sub_dir = ["/releases/", version, ?/]
       config_sub_path = [target_sub_dir, "custom.config"]
 

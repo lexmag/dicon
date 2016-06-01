@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Dicon.Switch do
   use Mix.Task
 
-  import Dicon, only: [config: 1, config: 2]
+  import Dicon, only: [config: 1, config: 2, host_config: 1]
 
   alias Dicon.Executor
 
@@ -15,7 +15,8 @@ defmodule Mix.Tasks.Dicon.Switch do
             "/" <> _ = dir -> dir
             dir -> ["$PWD", ?/, dir]
           end
-        for {_name, authority} <- config(:hosts, opts) do
+        for host <- config(:hosts, opts) do
+          authority = Keyword.fetch!(host_config(host), :authority)
           conn = Executor.connect(authority)
           symlink(conn, [target_dir, ?/, version], [target_dir, "/current"])
         end

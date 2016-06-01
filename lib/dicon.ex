@@ -59,11 +59,11 @@ defmodule Dicon do
 
   defp hosts_selector([], skip) do
     skip = Enum.map(skip, &String.to_atom/1)
-    fn {name, _} -> not(name in skip) end
+    &not(&1 in skip)
   end
 
   defp hosts_selector(only, skip) do
     only = Enum.map(only -- skip, &String.to_atom/1)
-    fn {name, _} -> (name in only) end
+    &(&1 in only)
   end
 end

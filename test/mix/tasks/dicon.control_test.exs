@@ -7,7 +7,9 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     config = %{
       otp_app: :sample,
       target_dir: "test",
-      hosts: [one: "one", two: "two"]
+      hosts: [:one, :two],
+      one: [authority: "one"],
+      two: [authority: "two"],
     }
     Mix.Config.persist(dicon: config)
     :ok
@@ -29,7 +31,9 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     config = %{
       otp_app: :sample,
       target_dir: "test",
-      hosts: [one: "one", two: "two"]
+      hosts: [:one, :two],
+      one: [authority: "one"],
+      two: [authority: "two"],
     }
     Mix.Config.persist(dicon: config)
 
