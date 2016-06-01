@@ -7,8 +7,14 @@ defmodule Mix.Tasks.Dicon.DeployTest do
   setup_all do
     config = %{
       target_dir: "test",
-      hosts: [one: "one", two: "two"],
-      one: [{:foo, bar: "baz"}]
+      hosts: [:one, :two],
+      one: [
+        authority: "one",
+        apps_env: [foo: [bar: "baz"]],
+      ],
+      two: [
+        authority: "two",
+      ],
     }
     Mix.Config.persist(dicon: config)
     :ok

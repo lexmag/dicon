@@ -6,7 +6,9 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
   test "relative path" do
     config = %{
       target_dir: "test",
-      hosts: [one: "one", two: "two"]
+      hosts: [:one, :two],
+      one: [authority: "one"],
+      two: [authority: "two"],
     }
     Mix.Config.persist(dicon: config)
 
@@ -24,7 +26,8 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
   test "absolute path" do
     config = %{
       target_dir: "/home/test",
-      hosts: [one: "one"]
+      hosts: [:one],
+      one: [authority: "one"],
     }
     Mix.Config.persist(dicon: config)
 
@@ -39,7 +42,9 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
   test "hosts filtering" do
     config = %{
       target_dir: "test",
-      hosts: [one: "one", two: "two"]
+      hosts: [:one, :two],
+      one: [authority: "one"],
+      two: [authority: "two"],
     }
     Mix.Config.persist(dicon: config)
 
