@@ -72,4 +72,18 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     message = "Invalid option: --no-value"
     assert_raise Mix.Error, message, fn -> run(~w(--no-value)) end
   end
+
+  test "OS environment" do
+    config = %{
+      otp_app: :sample,
+      target_dir: "test",
+      hosts: [:one],
+      one: [authority: "one", os_env: %{"IS_FOO" => "yes it is", "BAR" => "baz\"bong"}],
+    }
+    Mix.Config.persist(dicon: config)
+
+    run(["run"])
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ^ref, :exec, [~S(BAR="baz\"bong" IS_FOO="yes it is" test/current/bin/sample run)]}
+  end
 end
