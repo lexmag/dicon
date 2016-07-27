@@ -54,7 +54,7 @@ defmodule Dicon do
   end
 
   def host_config(name) do
-    Application.get_env(:dicon, name)
+    Application.fetch_env!(:dicon, name)
   end
 
   defp hosts_selector([], skip) do
