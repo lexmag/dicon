@@ -24,6 +24,7 @@ defmodule Dicon.SecureShell do
   @behaviour Dicon.Executor
 
   @timeout 5_000
+  @file_chunk_size 100_000 # in bytes
 
   defstruct [:conn, :sftp_channel]
 
@@ -131,13 +132,14 @@ defmodule Dicon.SecureShell do
   def copy(%__MODULE__{sftp_channel: channel}, source, target) do
     result =
       with {:ok, %File.Stat{size: size}} <- File.stat(source),
-           stream = File.stream!(source, [], div(size, 99)) |> Stream.with_index(1),
+           chunk_count = round(Float.ceil(size / @file_chunk_size)),
+           stream = File.stream!(source, [], @file_chunk_size) |> Stream.with_index(1),
            {:ok, handle} <- :ssh_sftp.open(channel, target, [:write], @timeout),
-           Enum.each(stream, fn {chunk, percent} ->
+           Enum.each(stream, fn {chunk, chunk_index} ->
              # TODO: we need to remove this assertion here as well, once we have a
              # better "streaming" API.
              :ok = :ssh_sftp.write(channel, handle, chunk, @timeout)
-             write_progress_bar(percent)
+             write_progress_bar(chunk_index / chunk_count)
            end),
            IO.puts("\n"),
            :ok <- :ssh_sftp.close(channel, handle, @timeout),
@@ -146,7 +148,8 @@ defmodule Dicon.SecureShell do
     format_if_error(result)
   end
 
-  defp write_progress_bar(percent) when percent in 1..100 do
+  defp write_progress_bar(percent) when is_float(percent) and percent >= 0.0 and percent <= 1.0 do
+    percent = round(percent * 100)
     done = String.duplicate("═", percent)
     rest = String.duplicate(" ", 100 - percent)
     IO.ANSI.format([:clear_line, ?\r, ?╎, done, rest, ?╎, ?\s, Integer.to_string(percent), ?%])
