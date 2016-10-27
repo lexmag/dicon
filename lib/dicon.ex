@@ -59,11 +59,9 @@ defmodule Dicon do
   end
 
   defp assert_specified_hosts_exist(hosts, specified_hosts) do
-    Enum.each(specified_hosts, fn(host) ->
-      if not host in hosts do
-        Mix.raise "unknown host: #{inspect(Atom.to_string(host))}"
-      end
-    end)
+    if unknown_host = Enum.find(specified_hosts, &not(&1 in hosts)) do
+      Mix.raise "unknown host: #{inspect(Atom.to_string(unknown_host))}"
+    end
   end
 
   defp hosts_selector([], skip) do
