@@ -45,7 +45,7 @@ defmodule Dicon do
 
     hosts = Application.fetch_env!(:dicon, :hosts)
 
-    assert_specified_hosts_exist(hosts, only ++ skip)
+    assert_filtered_hosts_exist(hosts, only ++ skip)
 
     Enum.filter(hosts, hosts_selector(only, skip))
   end
@@ -58,8 +58,8 @@ defmodule Dicon do
     Application.fetch_env!(:dicon, name)
   end
 
-  defp assert_specified_hosts_exist(hosts, specified_hosts) do
-    if unknown_host = Enum.find(specified_hosts, &not(&1 in hosts)) do
+  defp assert_filtered_hosts_exist(hosts, filtered_hosts) do
+    if unknown_host = Enum.find(filtered_hosts, &not(&1 in hosts)) do
       Mix.raise "unknown host: #{inspect(Atom.to_string(unknown_host))}"
     end
   end
