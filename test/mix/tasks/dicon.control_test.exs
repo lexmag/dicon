@@ -59,6 +59,10 @@ defmodule Mix.Tasks.Dicon.ControlTest do
 
     run(["run", "--skip", "one", "--skip", "two"])
     refute_receive {:dicon, _, _, _}
+
+    assert_raise Mix.Error, "unknown host: \"foo\"", fn ->
+      run(["run", "--skip", "foo", "--skip", "two"])
+    end
   end
 
   test "the task only accepts one argument" do

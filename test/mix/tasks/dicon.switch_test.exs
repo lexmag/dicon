@@ -70,6 +70,10 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
 
     run(["0.2.0", "--skip", "one", "--skip", "two"])
     refute_receive {:dicon, _, _, _}
+
+    assert_raise Mix.Error, "unknown host: \"foo\"", fn ->
+      run(["0.2.0", "--skip", "foo", "--skip", "two"])
+    end
   end
 
   test "the task only accepts one argument" do
