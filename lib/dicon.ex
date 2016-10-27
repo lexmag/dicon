@@ -40,13 +40,14 @@ defmodule Dicon do
   def config(key, opts \\ [])
 
   def config(:hosts, opts) do
-    only = Keyword.get_values(opts, :only)
-    skip = Keyword.get_values(opts, :skip)
+    only = Keyword.get_values(opts, :only) |> Enum.map(&String.to_atom/1)
+    skip = Keyword.get_values(opts, :skip) |> Enum.map(&String.to_atom/1)
 
-    fun = hosts_selector(only, skip)
+    hosts = Application.fetch_env!(:dicon, :hosts)
 
-    Application.fetch_env!(:dicon, :hosts)
-    |> Enum.filter(fun)
+    assert_specified_hosts_exist(hosts, only ++ skip)
+
+    Enum.filter(hosts, hosts_selector(only, skip))
   end
 
   def config(key, _opts) do
@@ -57,13 +58,20 @@ defmodule Dicon do
     Application.fetch_env!(:dicon, name)
   end
 
+  defp assert_specified_hosts_exist(hosts, specified_hosts) do
+    Enum.each(specified_hosts, fn(host) ->
+      if not host in hosts do
+        Mix.raise "unknown host: #{inspect(Atom.to_string(host))}"
+      end
+    end)
+  end
+
   defp hosts_selector([], skip) do
-    skip = Enum.map(skip, &String.to_atom/1)
     &not(&1 in skip)
   end
 
   defp hosts_selector(only, skip) do
-    only = Enum.map(only -- skip, &String.to_atom/1)
+    only = only -- skip
     &(&1 in only)
   end
 end
