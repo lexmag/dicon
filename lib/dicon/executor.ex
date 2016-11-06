@@ -50,8 +50,11 @@ defmodule Dicon.Executor do
   def connect(authority) do
     executor = Application.get_env(:dicon, :executor, SecureShell)
     case executor.connect(authority) do
-      {:ok, conn} -> %__MODULE__{executor: executor, conn: conn}
-      {:error, reason} -> raise_error(executor, reason)
+      {:ok, conn} ->
+        Mix.shell.info "Connected to #{authority}"
+        %__MODULE__{executor: executor, conn: conn}
+      {:error, reason} ->
+        raise_error(executor, reason)
     end
   end
 
