@@ -17,6 +17,9 @@ defmodule Dicon.ExecutorTest do
 
     def copy(_conn, 'fail', 'fail'), do: {:error, "copy failed"}
     def copy(_conn, _source, _target), do: :ok
+
+    def tail(_conn, ["fail" | _] = _patterns, _line_transformer, _device), do: {:error, "tail failed"}
+    def tail(_conn, _patterns, _line_transformer, _device), do: :ok
   end
 
   setup_all do
@@ -57,6 +60,17 @@ defmodule Dicon.ExecutorTest do
     message = "(in Dicon.ExecutorTest.FakeExecutor) write failed"
     assert_raise Mix.Error, message, fn ->
       Executor.write_file(conn, 'fail', "fail")
+    end
+  end
+
+  test "tail/4" do
+    conn = Executor.connect("whatever")
+
+    assert Executor.tail(conn, ["some", "patterns"], &(&1)) == :ok
+
+    message = "(in Dicon.ExecutorTest.FakeExecutor) tail failed"
+    assert_raise Mix.Error, message, fn ->
+      Executor.tail(conn, ["fail"], &(&1))
     end
   end
 end

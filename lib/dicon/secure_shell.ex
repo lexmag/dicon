@@ -156,6 +156,34 @@ defmodule Dicon.SecureShell do
     |> IO.write
   end
 
+  def tail(%__MODULE__{conn: conn}, patterns, line_transformer, device) do
+    result =
+      with {:ok, channel} <- :ssh_connection.session_channel(conn, @timeout),
+           tail_command = String.to_charlist("tail --follow=name " <> Enum.join(patterns, " ")),
+           :success <- :ssh_connection.exec(conn, channel, tail_command, @timeout),
+           :ok <- tail_loop(conn, channel, line_transformer, device) do
+        :ok
+      end
+
+    format_if_error(result)
+  end
+
+  defp tail_loop(conn, channel, line_transformer, device) do
+    receive do
+      {:ssh_cm, ^conn, {:data, ^channel, _code, data}} ->
+        data
+        |> String.splitter("\n")
+        |> Enum.each(fn(line) -> IO.write(device, [line_transformer.(line), ?\n]) end)
+        tail_loop(conn, channel, line_transformer, device)
+      {:ssh_cm, ^conn, {:eof, ^channel}} ->
+        :ok
+      {:ssh_cm, ^conn, {:exit_status, ^channel, status}} ->
+        {:error, "exited with status: #{status}"}
+      {:ssh_cm, ^conn, {:closed, ^channel}} ->
+        {:error, "connection closed"}
+    end
+  end
+
   defp format_if_error(:failure) do
     {:error, "failure on the SSH connection"}
   end
