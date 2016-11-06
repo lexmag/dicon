@@ -88,7 +88,7 @@ defmodule Dicon.Executor do
   end
 
   def write_file(%__MODULE__{} = state, target, content, mode \\ :write)
-  when mode in [:write, :append] and (is_binary(content) or is_list(content)) do
+      when mode in [:write, :append] and (is_binary(content) or is_list(content)) do
     run(state, :write_file, [target, content, mode])
   end
 
