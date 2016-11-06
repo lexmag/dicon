@@ -1,5 +1,7 @@
 ExUnit.start(refute_receive_timeout: 200)
 
+Mix.shell(Mix.Shell.Quiet)
+
 defmodule PathHelpers do
   def fixtures_path() do
     Path.expand("fixtures", __DIR__)
