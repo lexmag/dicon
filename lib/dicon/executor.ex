@@ -24,15 +24,15 @@ defmodule Dicon.Executor do
   Executes the given `command` on the given connection, writing the output of
   `command` to `device`.
   """
-  @callback exec(conn, command :: char_list, device :: atom | pid) :: :ok | {:error, binary}
+  @callback exec(conn, command :: charlist, device :: atom | pid) :: :ok | {:error, binary}
 
-  @callback write_file(conn, target :: char_list, content :: iodata, :write | :append) :: :ok | {:error, binary}
+  @callback write_file(conn, target :: charlist, content :: iodata, :write | :append) :: :ok | {:error, binary}
 
   @doc """
   Copies the local file `source` over to the destination `target` on the given
   connection.
   """
-  @callback copy(conn, source :: char_list, target :: char_list) :: :ok | {:error, binary}
+  @callback copy(conn, source :: charlist, target :: charlist) :: :ok | {:error, binary}
 
   @doc """
   Connects to authority.

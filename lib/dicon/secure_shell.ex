@@ -36,7 +36,7 @@ defmodule Dicon.SecureShell do
       put_option([], :user, user)
       |> put_option(:password, passwd)
       |> put_option(:user_dir, user_dir)
-    host = String.to_char_list(host)
+    host = String.to_charlist(host)
 
     result =
       with :ok <- ensure_started(),
@@ -50,7 +50,7 @@ defmodule Dicon.SecureShell do
 
   defp put_option(opts, _key, nil), do: opts
   defp put_option(opts, key, value) do
-    [{key, String.to_char_list(value)} | opts]
+    [{key, String.to_charlist(value)} | opts]
   end
 
   defp ensure_started() do
