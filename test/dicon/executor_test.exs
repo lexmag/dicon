@@ -26,6 +26,7 @@ defmodule Dicon.ExecutorTest do
 
   test "connect/1" do
     assert %Executor{} = Executor.connect("whatever")
+    assert_receive {:mix_shell, :info, ["Connected to whatever"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) connect failed"
     assert_raise Mix.Error, message, fn -> Executor.connect("fail") end
@@ -35,6 +36,7 @@ defmodule Dicon.ExecutorTest do
     conn = Executor.connect("whatever")
 
     assert Executor.exec(conn, "whatever") == :ok
+    assert_receive {:mix_shell, :info, ["==> EXEC whatever"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) exec failed"
     assert_raise Mix.Error, message, fn -> Executor.exec(conn, 'fail') end
@@ -44,6 +46,7 @@ defmodule Dicon.ExecutorTest do
     conn = Executor.connect("whatever")
 
     assert Executor.copy(conn, 'source', 'target') == :ok
+    assert_receive {:mix_shell, :info, ["==> COPY source target"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) copy failed"
     assert_raise Mix.Error, message, fn -> Executor.copy(conn, 'fail', 'fail') end
@@ -53,6 +56,7 @@ defmodule Dicon.ExecutorTest do
     conn = Executor.connect("whatever")
 
     assert Executor.write_file(conn, 'target', "content") == :ok
+    assert_receive {:mix_shell, :info, ["==> WRITE target"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) write failed"
     assert_raise Mix.Error, message, fn ->

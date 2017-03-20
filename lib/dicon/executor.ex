@@ -69,6 +69,7 @@ defmodule Dicon.Executor do
 
   """
   def exec(%__MODULE__{} = state, command, device \\ Process.group_leader()) do
+    Mix.shell.info "==> EXEC #{command}"
     run(state, :exec, [command, device])
   end
 
@@ -84,11 +85,13 @@ defmodule Dicon.Executor do
 
   """
   def copy(%__MODULE__{} = state, source, target) do
+    Mix.shell.info "==> COPY #{source} #{target}"
     run(state, :copy, [source, target])
   end
 
   def write_file(%__MODULE__{} = state, target, content, mode \\ :write)
       when mode in [:write, :append] and (is_binary(content) or is_list(content)) do
+    Mix.shell.info "==> WRITE #{target}"
     run(state, :write_file, [target, content, mode])
   end
 
