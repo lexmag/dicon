@@ -41,7 +41,7 @@ defmodule Dicon.Executor do
   `line_transformer` is called on each line output by `tail` before writing it to `device`.
   """
   @callback tail(conn,
-                 patterns :: [binary],
+                 patterns :: [binary, ...],
                  line_transformer :: (binary -> IO.ANSI.ansidata),
                  device :: atom | pid) ::
     :ok | {:error, binary}
