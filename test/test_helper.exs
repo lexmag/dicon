@@ -1,6 +1,6 @@
 ExUnit.start(refute_receive_timeout: 200)
 
-Mix.shell(Mix.Shell.Quiet)
+Mix.shell(Mix.Shell.Process)
 
 defmodule PathHelpers do
   def fixtures_path() do
