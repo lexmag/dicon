@@ -23,7 +23,9 @@ defmodule Dicon.SecureShell do
 
   @behaviour Dicon.Executor
 
-  @timeout 5_000
+  @connect_timeout 5_000
+  @write_timeout 5_000
+  @exec_timeout 5_000
   @file_chunk_size 100_000 # in bytes
 
   defstruct [:conn, :sftp_channel]
@@ -40,8 +42,8 @@ defmodule Dicon.SecureShell do
 
     result =
       with :ok <- ensure_started(),
-           {:ok, conn} <- :ssh.connect(host, port, opts, @timeout),
-           {:ok, sftp_channel} <- :ssh_sftp.start_channel(conn, timeout: @timeout) do
+           {:ok, conn} <- :ssh.connect(host, port, opts, @connect_timeout),
+           {:ok, sftp_channel} <- :ssh_sftp.start_channel(conn, timeout: @connect_timeout) do
         {:ok, %__MODULE__{conn: conn, sftp_channel: sftp_channel}}
       end
 
@@ -86,8 +88,8 @@ defmodule Dicon.SecureShell do
 
   def exec(%__MODULE__{conn: conn}, command, device) do
     result =
-      with {:ok, channel} <- :ssh_connection.session_channel(conn, @timeout),
-           :success <- :ssh_connection.exec(conn, channel, command, @timeout),
+      with {:ok, channel} <- :ssh_connection.session_channel(conn, @connect_timeout),
+           :success <- :ssh_connection.exec(conn, channel, command, @exec_timeout),
         do: handle_reply(conn, channel, device, [])
 
     format_if_error(result)
@@ -104,16 +106,16 @@ defmodule Dicon.SecureShell do
       {:ssh_cm, ^conn, {:closed, ^channel}} ->
         IO.write(device, acc)
     after
-      @timeout -> {:error, :timeout}
+      @exec_timeout -> {:error, :timeout}
     end
   end
 
   def write_file(%__MODULE__{sftp_channel: channel}, target, content, :append) do
     result =
-      with {:ok, handle} <- :ssh_sftp.open(channel, target, [:read, :write], @timeout),
-           {:ok, _} <- :ssh_sftp.position(channel, handle, :eof, @timeout),
-           :ok <- :ssh_sftp.write(channel, handle, content, @timeout),
-           :ok <- :ssh_sftp.close(channel, handle, @timeout),
+      with {:ok, handle} <- :ssh_sftp.open(channel, target, [:read, :write], @connect_timeout),
+           {:ok, _} <- :ssh_sftp.position(channel, handle, :eof, @exec_timeout),
+           :ok <- :ssh_sftp.write(channel, handle, content, @write_timeout),
+           :ok <- :ssh_sftp.close(channel, handle, @exec_timeout),
         do: :ok
 
     format_if_error(result)
@@ -121,9 +123,9 @@ defmodule Dicon.SecureShell do
 
   def write_file(%__MODULE__{sftp_channel: channel}, target, content, :write) do
     result =
-      with {:ok, handle} <- :ssh_sftp.open(channel, target, [:write], @timeout),
-           :ok <- :ssh_sftp.write(channel, handle, content, @timeout),
-           :ok <- :ssh_sftp.close(channel, handle, @timeout),
+      with {:ok, handle} <- :ssh_sftp.open(channel, target, [:write], @connect_timeout),
+           :ok <- :ssh_sftp.write(channel, handle, content, @write_timeout),
+           :ok <- :ssh_sftp.close(channel, handle, @exec_timeout),
         do: :ok
 
     format_if_error(result)
@@ -134,15 +136,15 @@ defmodule Dicon.SecureShell do
       with {:ok, %File.Stat{size: size}} <- File.stat(source),
            chunk_count = round(Float.ceil(size / @file_chunk_size)),
            stream = File.stream!(source, [], @file_chunk_size) |> Stream.with_index(1),
-           {:ok, handle} <- :ssh_sftp.open(channel, target, [:write], @timeout),
+           {:ok, handle} <- :ssh_sftp.open(channel, target, [:write], @connect_timeout),
            Enum.each(stream, fn {chunk, chunk_index} ->
              # TODO: we need to remove this assertion here as well, once we have a
              # better "streaming" API.
-             :ok = :ssh_sftp.write(channel, handle, chunk, @timeout)
+             :ok = :ssh_sftp.write(channel, handle, chunk, @write_timeout)
              write_progress_bar(chunk_index / chunk_count)
            end),
            IO.puts("\n"),
-           :ok <- :ssh_sftp.close(channel, handle, @timeout),
+           :ok <- :ssh_sftp.close(channel, handle, @exec_timeout),
         do: :ok
 
     format_if_error(result)
