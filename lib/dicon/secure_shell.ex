@@ -179,8 +179,9 @@ defmodule Dicon.SecureShell do
   defp write_spinner(index, count) do
     percent = round(100 * index / count)
     spinner = elem(@spinner_chars, rem(index, tuple_size(@spinner_chars)))
-    IO.ANSI.format([:clear_line, ?\r, spinner, ?\s, Integer.to_string(percent), ?%])
-    |> IO.write
+    [:clear_line, ?\r, spinner, ?\s, Integer.to_string(percent), ?%]
+    |> IO.ANSI.format()
+    |> IO.write()
   end
 
   defp format_if_error(:failure) do
