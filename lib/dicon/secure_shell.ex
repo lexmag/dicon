@@ -165,21 +165,23 @@ defmodule Dicon.SecureShell do
              # TODO: we need to remove this assertion here as well, once we have a
              # better "streaming" API.
              :ok = :ssh_sftp.write(channel, handle, chunk, write_timeout)
-             write_progress_bar(chunk_index / chunk_count)
+             write_spinner(chunk_index, chunk_count)
            end),
-           IO.puts("\n"),
+           IO.write(IO.ANSI.format([:clear_line, ?\r])),
            :ok <- :ssh_sftp.close(channel, handle, exec_timeout),
         do: :ok
 
     format_if_error(result)
   end
 
-  defp write_progress_bar(percent) when is_float(percent) and percent >= 0.0 and percent <= 1.0 do
-    percent = round(percent * 100)
-    done = String.duplicate("═", percent)
-    rest = String.duplicate(" ", 100 - percent)
-    IO.ANSI.format([:clear_line, ?\r, ?╎, done, rest, ?╎, ?\s, Integer.to_string(percent), ?%])
-    |> IO.write
+  @spinner_chars {?|, ?/, ?-, ?\\}
+
+  defp write_spinner(index, count) do
+    percent = round(100 * index / count)
+    spinner = elem(@spinner_chars, rem(index, tuple_size(@spinner_chars)))
+    [:clear_line, ?\r, spinner, ?\s, Integer.to_string(percent), ?%]
+    |> IO.ANSI.format()
+    |> IO.write()
   end
 
   defp format_if_error(:failure) do
