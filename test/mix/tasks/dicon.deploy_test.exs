@@ -24,6 +24,10 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     source = fixture_path("empty.tar.gz")
     release_file = "test/release.tar.gz"
 
+    on_exec("cat test/0.1.0/releases/0.1.0/sys.config", fn device ->
+      IO.write(device, "[{foo,[{qux,<<\"baz\">>}]}].\n")
+    end)
+
     run([source, "0.1.0"])
 
     assert_receive {:dicon, ref, :connect, ["one"]}
@@ -32,9 +36,8 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0"]}
     assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
     assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
-
-    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/custom.config", "[{foo,[{bar,<<\"baz\">>}]}].\n", :write]}
-    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/vm.args", "-config ./releases/0.1.0/custom.config\n", :append]}
+    assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config"]}
+    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write]}
 
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
@@ -49,6 +52,10 @@ defmodule Mix.Tasks.Dicon.DeployTest do
   test "hosts filtering" do
     source = fixture_path("empty.tar.gz")
 
+    on_exec("cat test/0.1.0/releases/0.1.0/sys.config", fn device ->
+      IO.write(device, "[].\n")
+    end)
+
     run([source, "0.1.0", "--only", "one"])
     assert_receive {:dicon, ref, :connect, ["one"]}
     :ok = flush_reply(ref)
@@ -61,6 +68,10 @@ defmodule Mix.Tasks.Dicon.DeployTest do
 
     run([source, "0.1.0", "--skip", "one", "--only", "one"])
     refute_receive {:dicon, _, _, _}
+
+    on_exec("cat test/0.1.0/releases/0.1.0/sys.config", fn device ->
+      IO.write(device, "[].\n")
+    end)
 
     run([source, "0.1.0", "--only", "one", "--only", "two"])
     assert_receive {:dicon, ref, :connect, ["one"]}

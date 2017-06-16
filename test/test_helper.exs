@@ -19,7 +19,7 @@ defmodule DiconTest.Case do
 
   using _ do
     quote do
-      import unquote(__MODULE__), only: [flush_reply: 1]
+      import unquote(__MODULE__), only: [flush_reply: 1, on_exec: 2]
     end
   end
 
@@ -31,7 +31,7 @@ defmodule DiconTest.Case do
   end
 
   setup do
-    Application.put_env(:dicon, __MODULE__, self())
+    Application.put_env(:dicon, __MODULE__, [test_pid: self()])
     on_exit(fn ->
       Application.delete_env(:dicon, __MODULE__)
     end)
@@ -43,8 +43,9 @@ defmodule DiconTest.Case do
     {:ok, conn}
   end
 
-  def exec(conn, command, _device) do
+  def exec(conn, command, device) do
     command = List.to_string(command)
+    run_callback(command, device)
     notify_test({:dicon, conn, :exec, [command]})
     :ok
   end
@@ -64,8 +65,18 @@ defmodule DiconTest.Case do
   end
 
   defp notify_test(message) do
-    test_pid = Application.fetch_env!(:dicon, __MODULE__)
-    send(test_pid, message)
+    :dicon
+    |> Application.fetch_env!(__MODULE__)
+    |> Keyword.fetch!(:test_pid)
+    |> send(message)
+  end
+
+  def on_exec(command, callback) do
+    env =
+      :dicon
+      |> Application.fetch_env!(__MODULE__)
+      |> Keyword.update(:exec_callbacks, %{command => callback}, &Map.put(&1, command, callback))
+    Application.put_env(:dicon, __MODULE__, env)
   end
 
   def flush_reply(conn) do
@@ -75,5 +86,15 @@ defmodule DiconTest.Case do
     after
       50 -> :ok
     end
+  end
+
+  defp run_callback(command, device) do
+    env = Application.fetch_env!(:dicon, __MODULE__)
+    {callback, env} = pop_in(env, [:exec_callbacks, command])
+    if callback do
+      callback.(device)
+      Application.put_env(:dicon, __MODULE__, env)
+    end
+    :ok
   end
 end
