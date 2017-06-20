@@ -27,7 +27,6 @@ defmodule Dicon.SecureShell do
 
   defstruct [
     :conn,
-    :sftp_channel,
     :connect_timeout,
     :write_timeout,
     :exec_timeout,
@@ -48,11 +47,9 @@ defmodule Dicon.SecureShell do
 
     result =
       with :ok <- ensure_started(),
-           {:ok, conn} <- :ssh.connect(host, port, opts, connect_timeout),
-           {:ok, sftp_channel} <- :ssh_sftp.start_channel(conn, timeout: connect_timeout) do
+           {:ok, conn} <- :ssh.connect(host, port, opts, connect_timeout) do
         state = %__MODULE__{
           conn: conn,
-          sftp_channel: sftp_channel,
           connect_timeout: connect_timeout,
           write_timeout: write_timeout,
           exec_timeout: exec_timeout,
@@ -147,23 +144,23 @@ defmodule Dicon.SecureShell do
   end
 
   def copy(%__MODULE__{} = state, source, target) do
-    %{sftp_channel: channel, connect_timeout: connect_timeout,
-      write_timeout: write_timeout, exec_timeout: exec_timeout} = state
+    %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 
     result =
       with {:ok, %File.Stat{size: size}} <- File.stat(source),
            chunk_count = round(Float.ceil(size / @file_chunk_size)),
            stream = File.stream!(source, [], @file_chunk_size) |> Stream.with_index(1),
-           {:ok, handle} <- :ssh_sftp.open(channel, target, [:write], connect_timeout),
+           {:ok, channel} <- :ssh_connection.session_channel(conn, connect_timeout),
+           :success <- :ssh_connection.exec(conn, channel, ["cat > ", target], exec_timeout),
            Enum.each(stream, fn {chunk, chunk_index} ->
              # TODO: we need to remove this assertion here as well, once we have a
              # better "streaming" API.
-             :ok = :ssh_sftp.write(channel, handle, chunk, write_timeout)
+             :ok = :ssh_connection.send(conn, channel, chunk, exec_timeout)
              write_spinner(chunk_index, chunk_count)
            end),
            IO.write(IO.ANSI.format([:clear_line, ?\r])),
-           :ok <- :ssh_sftp.close(channel, handle, exec_timeout),
-        do: :ok
+           :ok <- :ssh_connection.send_eof(conn, channel),
+           do: handle_reply(conn, channel, Process.group_leader(), exec_timeout, _acc = [])
 
     format_if_error(result)
   end
