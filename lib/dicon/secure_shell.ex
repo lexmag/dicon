@@ -126,28 +126,22 @@ defmodule Dicon.SecureShell do
   end
 
   def write_file(%__MODULE__{} = state, target, content, :append) do
-    %{sftp_channel: channel, connect_timeout: connect_timeout,
-      write_timeout: write_timeout, exec_timeout: exec_timeout} = state
-
-    result =
-      with {:ok, handle} <- :ssh_sftp.open(channel, target, [:read, :write], connect_timeout),
-           {:ok, _} <- :ssh_sftp.position(channel, handle, :eof, exec_timeout),
-           :ok <- :ssh_sftp.write(channel, handle, content, write_timeout),
-           :ok <- :ssh_sftp.close(channel, handle, exec_timeout),
-        do: :ok
-
-    format_if_error(result)
+    write_file(state, ["cat >> ", target], content)
   end
 
   def write_file(%__MODULE__{} = state, target, content, :write) do
-    %{sftp_channel: channel, connect_timeout: connect_timeout,
-      write_timeout: write_timeout, exec_timeout: exec_timeout} = state
+    write_file(state, ["cat > ", target], content)
+  end
+
+  defp write_file(state, command, content) do
+    %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 
     result =
-      with {:ok, handle} <- :ssh_sftp.open(channel, target, [:write], connect_timeout),
-           :ok <- :ssh_sftp.write(channel, handle, content, write_timeout),
-           :ok <- :ssh_sftp.close(channel, handle, exec_timeout),
-        do: :ok
+      with {:ok, channel} <- :ssh_connection.session_channel(conn, connect_timeout),
+           :success <- :ssh_connection.exec(conn, channel, command, exec_timeout),
+           :ok <- :ssh_connection.send(conn, channel, content, exec_timeout),
+           :ok <- :ssh_connection.send_eof(conn, channel),
+           do: handle_reply(conn, channel, Process.group_leader(), exec_timeout, _acc = [])
 
     format_if_error(result)
   end
