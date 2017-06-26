@@ -67,15 +67,24 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
   defp write_custom_config(conn, host_config, target_dir, version) do
     if config = host_config[:apps_env] do
-      target_sub_dir = ["/releases/", version, ?/]
-      config_sub_path = [target_sub_dir, "custom.config"]
+      sys_config_path = [target_dir, "/releases/", version, "/sys.config"]
 
-      content = :io_lib.format('~p.\n', [config])
-      Executor.write_file(conn, [target_dir, config_sub_path], content)
+      # We use StringIO to receive "sys.config" content
+      # that we can parse later.
+      {:ok, device} = StringIO.open("")
+      Executor.exec(conn, ["cat ", sys_config_path], device)
+      {:ok, {"", sys_config_content}} = StringIO.close(device)
+      {:ok, device} = StringIO.open(sys_config_content)
+      sys_config = case :io.read(device, "") do
+        {:ok, sys_config} -> sys_config
+        {:error, _reason} -> Mix.raise("Could not parse \"sys.config\" file")
+        :eof -> Mix.raise("\"sys.config\" file is incomplete")
+      end
+      {:ok, _} = StringIO.close(device)
 
-      vm_args_path = [target_dir, target_sub_dir, "vm.args"]
-      content = ["-config ", ?., config_sub_path, ?\n]
-      Executor.write_file(conn, vm_args_path, content, :append)
+      config = Mix.Config.merge(sys_config, config)
+      content = :io_lib.format("~p.~n", [config])
+      Executor.write_file(conn, sys_config_path, content)
     end
   end
 end
