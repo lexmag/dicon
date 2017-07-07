@@ -35,6 +35,18 @@ defmodule Dicon.Executor do
   @callback copy(conn, source :: charlist, target :: charlist) :: :ok | {:error, binary}
 
   @doc """
+  Tails the given list of `patterns` continuously (`tail -f`), returning only in
+  case of errors.
+
+  `line_transformer` is called on each line output by `tail` before writing it to `device`.
+  """
+  @callback tail(conn,
+                 patterns :: [binary, ...],
+                 line_transformer :: (binary -> IO.ANSI.ansidata),
+                 device :: atom | pid) ::
+    :ok | {:error, binary}
+
+  @doc """
   Connects to authority.
 
   The connection happens through the executor configured in the configuration
@@ -93,6 +105,10 @@ defmodule Dicon.Executor do
       when mode in [:write, :append] and (is_binary(content) or is_list(content)) do
     Mix.shell.info "==> WRITE #{target}"
     run(state, :write_file, [target, content, mode])
+  end
+
+  def tail(%__MODULE__{} = state, patterns, line_transformer, device \\ Process.group_leader()) do
+    run(state, :tail, [patterns, line_transformer, device])
   end
 
   defp run(%{executor: executor, conn: conn}, fun, args) do

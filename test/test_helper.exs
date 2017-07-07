@@ -64,6 +64,11 @@ defmodule DiconTest.Case do
     :ok
   end
 
+  def tail(conn, patterns, _line_transformer, _device) do
+    notify_test({:dicon, conn, :tail, [patterns]})
+    :ok
+  end
+
   defp notify_test(message) do
     :dicon
     |> Application.fetch_env!(__MODULE__)
