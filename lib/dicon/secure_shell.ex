@@ -15,10 +15,18 @@ defmodule Dicon.SecureShell do
     * `:dir` - a binary that specifies the directory where the SSH keys are (in
       the local machine). Defaults to `"~/.ssh"`.
 
+    * `:connect_timeout` - an integer that specifies the timeout (in milliseconds)
+      when connecting to the host.
+
+    * `:write_timeout` - an integer that specifies the timeout (in milliseconds)
+      when writing data to the host.
+
+    * `:exec_timeout` - an integer that specifies the timeout (in milliseconds)
+      when executing commands on the host.
+
   The username and password user to connect to the server will be picked up by
   the URL that identifies that server (in `:dicon`'s configuration); read more
   about this in the documentation for the `Dicon` module.
-
   """
 
   @behaviour Dicon.Executor
