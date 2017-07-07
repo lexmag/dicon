@@ -13,17 +13,49 @@ defmodule Dicon do
 
     * `:otp_app` - an atom that specifies the name of the application being
       deployed.
+
     * `:target_dir` - a binary that specifies the directory where the release
       tarball will be extracted into.
-    * `:hosts` - a list of `{host_name, authority}` that specifies on which
-      servers the release should be uploaded and extracted. `host_name`s should
-      be atoms; they're used to identify authorities in the list of authorities.
+
+    * `:hosts` - a list of `host_name` atoms that specifies which
+      servers the release should be deployed to. Each host should be then
+      configured under the `:dicon` application. See the "Configuration for hosts"
+      section below.
       `authority`s should be "authorities" according to [this
       RFC](https://tools.ietf.org/html/rfc3986#section-3.2), i.e., binaries with
       an optional userinfo followed by `@`, an hostname, and an optional port
       preceded by `:`. For example, `me:mypassword@example.com:22`.
+
     * `:executor` - a module that will be used to execute commands on servers.
       By default, it's `Dicon.SecureShell`.
+
+  ### Configuration for hosts
+
+  Each host listed in the `:hosts` configuration option mentioned above can be
+  configured under the `:dicon` application. For example, take this configuration:
+
+      config :dicon,
+        hosts: [:app01, :app02]
+
+  Now the `:app01` and `:app02` hosts can be configured like this:
+
+      config :dicon, :app01,
+        authority: "myuser@app01.example.net"
+
+  These are the supported host configuration options:
+
+    * `:authority` - (binary) an "authority" according to [this
+      RFC](https://tools.ietf.org/html/rfc3986#section-3.2), that is, a binary with
+      an optional userinfo followed by `@`, an hostname, and an optional port
+      preceded by `:`. For example, `"me:mypassword@example.net:22"`.
+
+    * `:os_env` - (map) a map of environment variable name (as a binary) to
+      value (as a binary). These environment variables will be used when running
+      commands on the target host.
+
+    * `:apps_env` - (keyword list) a keyword list of application to configuration
+      that can be used to override the configuration for some applications on
+      the target host.
 
   ### Configuration for executors
 
