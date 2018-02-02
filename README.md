@@ -10,7 +10,7 @@ Add dicon as a dependency in your `mix.exs` file:
 
 ```elixir
 def deps do
-  [{:dicon, "~> 0.2"}]
+  [{:dicon, "~> 0.5", [only: :dev, runtime: false]}]
 end
 ```
 
