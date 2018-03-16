@@ -24,6 +24,10 @@ defmodule Dicon.SecureShell do
     * `:exec_timeout` - an integer that specifies the timeout (in milliseconds)
       when executing commands on the host.
 
+    * `:rsa_passphrase` - a binary that specifies the passphrase for RSA key.
+
+    * `:ecdsa_passphrase` - a binary that specifies the passphrase for ECDSA key.
+
   The username and password user to connect to the server will be picked up by
   the URL that identifies that server (in `:dicon`'s configuration); read more
   about this in the documentation for the `Dicon` module.
@@ -46,11 +50,15 @@ defmodule Dicon.SecureShell do
     write_timeout = Keyword.get(config, :write_timeout, 5_000)
     exec_timeout = Keyword.get(config, :exec_timeout, 5_000)
     user_dir = Keyword.get(config, :dir, "~/.ssh") |> Path.expand
+    rsa_passphrase = Keyword.get(config, :rsa_passphrase)
+    ecdsa_passphrase = Keyword.get(config, :ecdsa_passphrase)
     {user, passwd, host, port} = parse_elements(authority)
     opts =
       put_option([], :user, user)
       |> put_option(:password, passwd)
       |> put_option(:user_dir, user_dir)
+      |> put_option(:rsa_pass_phrase, rsa_passphrase)
+      |> put_option(:ecdsa_pass_phrase, ecdsa_passphrase)
     host = String.to_charlist(host)
 
     result =
