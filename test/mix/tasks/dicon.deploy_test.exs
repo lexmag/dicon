@@ -60,13 +60,13 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     run(["--parallel", "--timeout", "36000", source, "0.1.0"])
 
     assert_receive {:dicon, ref, :connect, ["one"]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", true]}
-    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, true]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", true]}
-    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, true]}
-    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, true]}
-    assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config", true]}
-    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write, true]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", false]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", false]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config", false]}
+    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write, false]}
 
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", true]}

@@ -47,18 +47,7 @@ defmodule Mix.Tasks.Dicon.Deploy do
         hosts = config(:hosts, opts)
 
         if opts[:parallel] do
-          hosts
-          |> Task.async_stream(
-            fn host ->
-              ExUnit.CaptureIO.capture_io(fn ->
-                deploy(host, source, target_dir, version, true)
-              end)
-            end,
-            timeout: Keyword.get(opts, :timeout, :infinity),
-            ordered: false,
-            max_concurrency: length(hosts)
-          )
-          |> Enum.each(fn {:ok, io} -> IO.puts(io) end)
+          parallel_deploy(hosts, target_dir, version, source, opts)
         else
           Enum.map(hosts, &deploy(&1, source, target_dir, version, false))
         end
@@ -69,6 +58,29 @@ defmodule Mix.Tasks.Dicon.Deploy do
       {_opts, _commands, _errors} ->
         Mix.raise("Expected two arguments (the tarball path and the version)")
     end
+  end
+
+  defp parallel_deploy(hosts, target_dir, version, source, opts) do
+    timeout = Keyword.get(opts, :timeout, :infinity)
+    [first | hosts] = hosts
+    task = Task.async(fn -> deploy(first, source, target_dir, version, false) end)
+
+    other_ios =
+      Task.async_stream(
+        hosts,
+        &ExUnit.CaptureIO.capture_io(fn -> deploy(&1, source, target_dir, version, true) end),
+        timeout: timeout,
+        ordered: false,
+        max_concurrency: length(hosts)
+      )
+
+    Task.await(task, timeout)
+
+    Enum.each(other_ios, fn
+      {:ok, ""} -> :ok
+      {:ok, io} -> IO.puts(io)
+      {:error, reason} -> IO.puts("Deploy failed for reason #{inspect(reason)}")
+    end)
   end
 
   defp deploy(host, source, target_dir, version, silent) do
