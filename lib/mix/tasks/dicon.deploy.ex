@@ -48,8 +48,17 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
         if opts[:parallel] do
           hosts
-          |> Enum.map(&Task.async(fn -> deploy(&1, source, target_dir, version, true) end))
-          |> Enum.each(&Task.await(&1, Keyword.get(opts, :timeout, :infinity)))
+          |> Task.async_stream(
+            fn host ->
+              ExUnit.CaptureIO.capture_io(fn ->
+                deploy(host, source, target_dir, version, true)
+              end)
+            end,
+            timeout: Keyword.get(opts, :timeout, :infinity),
+            ordered: false,
+            max_concurrency: length(hosts)
+          )
+          |> Enum.each(fn {:ok, io} -> IO.puts(io) end)
         else
           Enum.map(hosts, &deploy(&1, source, target_dir, version, false))
         end
