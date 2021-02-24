@@ -57,7 +57,7 @@ defmodule Mix.Tasks.Dicon.DeployTest do
       IO.write(device, "[{foo,[{qux,<<\"baz\">>}]}].\n")
     end)
 
-    run([source, "0.1.0", "--parallel", "--timeout", "36000"])
+    run(["--parallel", "--timeout", "36000", source, "0.1.0"])
 
     assert_receive {:dicon, ref, :connect, ["one"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", true]}

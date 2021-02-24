@@ -9,7 +9,18 @@ defmodule Mix.Tasks.Dicon.Deploy do
   The configured hosts are picked up from the application's configuration; read
   the `Dicon` documentation for more information.
 
-  This task accepts two arguments: the compressed tarball to upload and its version.
+  This task accepts two arguments: the compressed tarball to upload and its version. There are
+  also two flags that can be passed to configure uploading the tarball to multiple hosts in
+  parallel.
+
+  ## Flags
+
+    This command supports the following CLI flags:
+
+    * `--parallel` - boolean flag that will enable uploading the compressed tarball in parallel to all hosts.
+    * `--timeout` - the value in milliseconds for a timeout for each async upload. Defaults to `:infinity`.
+
+    `--timeout` is ignored if it is passed without `--parallel`.
 
   ## Usage
 
@@ -18,6 +29,8 @@ defmodule Mix.Tasks.Dicon.Deploy do
   ## Examples
 
       mix dicon.deploy my_app.tar.gz 1.0.0
+      mix dicon.deploy --parallel my_app.tar.gz 1.0.0
+      mix dicon.deploy my_app.tar.gz 1.0.0 --parallel --timeout 36000
 
   """
 
