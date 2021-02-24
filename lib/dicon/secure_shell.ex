@@ -168,7 +168,7 @@ defmodule Dicon.SecureShell do
                write_spinner(chunk_index, chunk_count)
              end
            end),
-           IO.write(IO.ANSI.format([:clear_line, ?\r])),
+           (unless silent, do: IO.write(IO.ANSI.format([:clear_line, ?\r]))),
            :ok <- :ssh_connection.send_eof(conn, channel),
            do: handle_reply(conn, channel, Process.group_leader(), exec_timeout, _acc = [])
 

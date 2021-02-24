@@ -25,40 +25,20 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
   alias Dicon.Executor
 
-  @options [strict: [only: :keep, skip: :keep, parallel: :boolean]]
+  @options [strict: [only: :keep, skip: :keep, parallel: :boolean, timeout: :integer]]
 
   def run(argv) do
     case OptionParser.parse(argv, @options) do
       {opts, [source, version], []} ->
         target_dir = config(:target_dir)
+        hosts = config(:hosts, opts)
 
         if opts[:parallel] do
-          :hosts
-          |> config(opts)
-          |> Enum.map(fn host ->
-            Task.async(fn ->
-              host_config = host_config(host)
-              authority = Keyword.fetch!(host_config, :authority)
-              conn = Executor.connect(authority)
-              release_file = upload(conn, [source], target_dir)
-              target_dir = [target_dir, ?/, version]
-              unpack(conn, release_file, target_dir)
-              write_custom_config(conn, host_config, target_dir, version)
-            end)
-          end)
-          |> Enum.each(&Task.await(&1, 360_000))
+          hosts
+          |> Enum.map(&Task.async(fn -> deploy(&1, source, target_dir, version, true) end))
+          |> Enum.each(&Task.await(&1, Keyword.get(opts, :timeout, :infinity)))
         else
-          :hosts
-          |> config(opts)
-          |> Enum.map(fn host ->
-            host_config = host_config(host)
-            authority = Keyword.fetch!(host_config, :authority)
-            conn = Executor.connect(authority)
-            release_file = upload(conn, [source], target_dir)
-            target_dir = [target_dir, ?/, version]
-            unpack(conn, release_file, target_dir)
-            write_custom_config(conn, host_config, target_dir, version)
-          end)
+          Enum.map(hosts, &deploy(&1, source, target_dir, version, false))
         end
 
       {_opts, _commands, [switch | _]} ->
@@ -69,32 +49,42 @@ defmodule Mix.Tasks.Dicon.Deploy do
     end
   end
 
-  defp ensure_dir(conn, path) do
-    Executor.exec(conn, false, ["mkdir -p ", path])
+  defp deploy(host, source, target_dir, version, silent) do
+    host_config = host_config(host)
+    authority = Keyword.fetch!(host_config, :authority)
+    conn = Executor.connect(authority)
+    release_file = upload(conn, silent, [source], target_dir)
+    target_dir = [target_dir, ?/, version]
+    unpack(conn, silent, release_file, target_dir)
+    write_custom_config(conn, silent, host_config, target_dir, version)
   end
 
-  defp upload(conn, silent \\ false, source, target_dir) do
-    ensure_dir(conn, target_dir)
+  defp ensure_dir(conn, silent, path) do
+    Executor.exec(conn, silent, ["mkdir -p ", path])
+  end
+
+  defp upload(conn, silent, source, target_dir) do
+    ensure_dir(conn, silent, target_dir)
     release_file = [target_dir, "/release.tar.gz"]
     Executor.copy(conn, silent, source, release_file)
     release_file
   end
 
-  defp unpack(conn, release_file, target_dir) do
-    ensure_dir(conn, target_dir)
+  defp unpack(conn, silent, release_file, target_dir) do
+    ensure_dir(conn, silent, target_dir)
     command = ["tar -C ", target_dir, " -zxf ", release_file]
-    Executor.exec(conn, false, command)
-    Executor.exec(conn, false, ["rm ", release_file])
+    Executor.exec(conn, silent, command)
+    Executor.exec(conn, silent, ["rm ", release_file])
   end
 
-  defp write_custom_config(conn, host_config, target_dir, version) do
+  defp write_custom_config(conn, silent, host_config, target_dir, version) do
     if config = host_config[:apps_env] do
       sys_config_path = [target_dir, "/releases/", version, "/sys.config"]
 
       # We use StringIO to receive "sys.config" content
       # that we can parse later.
       {:ok, device} = StringIO.open("")
-      Executor.exec(conn, false, ["cat ", sys_config_path], device)
+      Executor.exec(conn, silent, ["cat ", sys_config_path], device)
       {:ok, {"", sys_config_content}} = StringIO.close(device)
       {:ok, device} = StringIO.open(sys_config_content)
 
@@ -109,7 +99,7 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
       config = Mix.Config.merge(sys_config, config)
       content = :io_lib.format("~p.~n", [config])
-      Executor.write_file(conn, false, sys_config_path, content)
+      Executor.write_file(conn, silent, sys_config_path, content)
     end
   end
 end

@@ -49,6 +49,35 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     refute_receive {:dicon, _, _, _}
   end
 
+  test "the release is uploaded in parallel correctly" do
+    source = fixture_path("empty.tar.gz")
+    release_file = "test/release.tar.gz"
+
+    on_exec("cat test/0.1.0/releases/0.1.0/sys.config", fn device ->
+      IO.write(device, "[{foo,[{qux,<<\"baz\">>}]}].\n")
+    end)
+
+    run([source, "0.1.0", "--parallel", "--timeout", "36000"])
+
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", true]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, true]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", true]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, true]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, true]}
+    assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config", true]}
+    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write, true]}
+
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", true]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, true]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", true]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, true]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, true]}
+
+    refute_receive {:dicon, _, _, _}
+  end
+
   test "hosts filtering" do
     source = fixture_path("empty.tar.gz")
 
