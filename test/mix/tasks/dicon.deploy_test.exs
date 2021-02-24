@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Dicon.DeployTest do
   import Mix.Tasks.Dicon.Deploy, only: [run: 1]
 
   setup_all do
-    config = %{
+    config = [
       target_dir: "test",
       hosts: [:one, :two],
       one: [
@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Dicon.DeployTest do
       two: [
         authority: "two",
       ],
-    }
+    ]
     Mix.Config.persist(dicon: config)
     :ok
   end
@@ -31,20 +31,49 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     run([source, "0.1.0"])
 
     assert_receive {:dicon, ref, :connect, ["one"]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
-    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0"]}
-    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
-    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
-    assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config"]}
-    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", false]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", false]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config", false]}
+    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write, false]}
 
     assert_receive {:dicon, ref, :connect, ["two"]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
-    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file]}
-    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0"]}
-    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
-    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", false]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", false]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, false]}
+
+    refute_receive {:dicon, _, _, _}
+  end
+
+  test "the release is uploaded in parallel correctly" do
+    source = fixture_path("empty.tar.gz")
+    release_file = "test/release.tar.gz"
+
+    on_exec("cat test/0.1.0/releases/0.1.0/sys.config", fn device ->
+      IO.write(device, "[{foo,[{qux,<<\"baz\">>}]}].\n")
+    end)
+
+    run(["--parallel", "--timeout", "36000", source, "0.1.0"])
+
+    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", false]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", false]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, false]}
+    assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config", false]}
+    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write, false]}
+
+    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test", true]}
+    assert_receive {:dicon, ^ref, :copy, [^source, ^release_file, true]}
+    assert_receive {:dicon, ^ref, :exec, ["mkdir -p test/0.1.0", true]}
+    assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file, true]}
+    assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file, true]}
 
     refute_receive {:dicon, _, _, _}
   end

@@ -4,48 +4,48 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
   import Mix.Tasks.Dicon.Switch, only: [run: 1]
 
   test "relative path" do
-    config = %{
+    config = [
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
       two: [authority: "two"],
-    }
+    ]
     Mix.Config.persist(dicon: config)
 
     run(["0.1.0"])
 
     assert_receive {:dicon, ref, :connect, ["one"]}
-    assert_receive {:dicon, ^ref, :exec, ["ln -snf $PWD/test/0.1.0 $PWD/test/current"]}
+    assert_receive {:dicon, ^ref, :exec, ["ln -snf $PWD/test/0.1.0 $PWD/test/current", false]}
 
     assert_receive {:dicon, ref, :connect, ["two"]}
-    assert_receive {:dicon, ^ref, :exec, ["ln -snf $PWD/test/0.1.0 $PWD/test/current"]}
+    assert_receive {:dicon, ^ref, :exec, ["ln -snf $PWD/test/0.1.0 $PWD/test/current", false]}
 
     refute_receive {:dicon, _, _, _}
   end
 
   test "absolute path" do
-    config = %{
+    config = [
       target_dir: "/home/test",
       hosts: [:one],
       one: [authority: "one"],
-    }
+    ]
     Mix.Config.persist(dicon: config)
 
     run(["0.2.0"])
 
     assert_receive {:dicon, ref, :connect, ["one"]}
-    assert_receive {:dicon, ^ref, :exec, ["ln -snf /home/test/0.2.0 /home/test/current"]}
+    assert_receive {:dicon, ^ref, :exec, ["ln -snf /home/test/0.2.0 /home/test/current", false]}
 
     refute_receive {:dicon, _, _, _}
   end
 
   test "hosts filtering" do
-    config = %{
+    config = [
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
       two: [authority: "two"],
-    }
+    ]
     Mix.Config.persist(dicon: config)
 
     run(["0.2.0", "--only", "one"])
