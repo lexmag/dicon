@@ -104,7 +104,7 @@ defmodule Dicon.SecureShell do
     {user, passwd, host, port}
   end
 
-  def exec(%__MODULE__{} = state, command, device) do
+  def exec(%__MODULE__{} = state, _silent, command, device) do
     %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 
     result =
@@ -130,11 +130,11 @@ defmodule Dicon.SecureShell do
     end
   end
 
-  def write_file(%__MODULE__{} = state, target, content, :append) do
+  def write_file(%__MODULE__{} = state, _silent, target, content, :append) do
     write_file(state, ["cat >> ", target], content)
   end
 
-  def write_file(%__MODULE__{} = state, target, content, :write) do
+  def write_file(%__MODULE__{} = state, _silent, target, content, :write) do
     write_file(state, ["cat > ", target], content)
   end
 
@@ -151,7 +151,7 @@ defmodule Dicon.SecureShell do
     format_if_error(result)
   end
 
-  def copy(%__MODULE__{} = state, source, target) do
+  def copy(%__MODULE__{} = state, silent, source, target) do
     %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 
     result =
@@ -164,7 +164,9 @@ defmodule Dicon.SecureShell do
              # TODO: we need to remove this assertion here as well, once we have a
              # better "streaming" API.
              :ok = :ssh_connection.send(conn, channel, chunk, exec_timeout)
-             write_spinner(chunk_index, chunk_count)
+             unless silent do
+               write_spinner(chunk_index, chunk_count)
+             end
            end),
            IO.write(IO.ANSI.format([:clear_line, ?\r])),
            :ok <- :ssh_connection.send_eof(conn, channel),

@@ -48,6 +48,6 @@ defmodule Mix.Tasks.Dicon.Control do
           [key, ?=, inspect(value, binaries: :as_strings), ?\s]
       end)
     command = env ++ [target_dir, "/current/bin/", otp_app, ?\s, command]
-    Executor.exec(conn, command)
+    Executor.exec(conn, false, command)
   end
 end

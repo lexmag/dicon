@@ -9,14 +9,14 @@ defmodule Dicon.ExecutorTest do
     def connect("fail"), do: {:error, "connect failed"}
     def connect(term), do: {:ok, term}
 
-    def exec(_conn, 'fail', _device), do: {:error, "exec failed"}
-    def exec(_conn, _command, _device), do: :ok
+    def exec(_conn, _silent, 'fail', _device), do: {:error, "exec failed"}
+    def exec(_conn, _silent, _command, _device), do: :ok
 
-    def write_file(_conn, 'fail', "fail", _mode), do: {:error, "write failed"}
-    def write_file(_conn, _target, _content, _mode), do: :ok
+    def write_file(_conn, _silent, 'fail', "fail", _mode), do: {:error, "write failed"}
+    def write_file(_conn, _silent, _target, _content, _mode), do: :ok
 
-    def copy(_conn, 'fail', 'fail'), do: {:error, "copy failed"}
-    def copy(_conn, _source, _target), do: :ok
+    def copy(_conn, _silent, 'fail', 'fail'), do: {:error, "copy failed"}
+    def copy(_conn, _silent, _source, _target), do: :ok
   end
 
   setup_all do
@@ -32,35 +32,35 @@ defmodule Dicon.ExecutorTest do
     assert_raise Mix.Error, message, fn -> Executor.connect("fail") end
   end
 
-  test "exec/2" do
+  test "exec/3" do
     conn = Executor.connect("whatever")
 
-    assert Executor.exec(conn, "whatever") == :ok
+    assert Executor.exec(conn, false, "whatever") == :ok
     assert_receive {:mix_shell, :info, ["==> EXEC whatever"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) exec failed"
-    assert_raise Mix.Error, message, fn -> Executor.exec(conn, 'fail') end
+    assert_raise Mix.Error, message, fn -> Executor.exec(conn, false, 'fail') end
   end
 
-  test "copy/2" do
+  test "copy/3" do
     conn = Executor.connect("whatever")
 
-    assert Executor.copy(conn, 'source', 'target') == :ok
+    assert Executor.copy(conn, false, 'source', 'target') == :ok
     assert_receive {:mix_shell, :info, ["==> COPY source target"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) copy failed"
-    assert_raise Mix.Error, message, fn -> Executor.copy(conn, 'fail', 'fail') end
+    assert_raise Mix.Error, message, fn -> Executor.copy(conn, false, 'fail', 'fail') end
   end
 
-  test "write_file/4" do
+  test "write_file/5" do
     conn = Executor.connect("whatever")
 
-    assert Executor.write_file(conn, 'target', "content") == :ok
+    assert Executor.write_file(conn, false, 'target', "content") == :ok
     assert_receive {:mix_shell, :info, ["==> WRITE target"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) write failed"
     assert_raise Mix.Error, message, fn ->
-      Executor.write_file(conn, 'fail', "fail")
+      Executor.write_file(conn, false, 'fail', "fail")
     end
   end
 end

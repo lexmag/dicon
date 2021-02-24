@@ -24,15 +24,15 @@ defmodule Dicon.Executor do
   Executes the given `command` on the given connection, writing the output of
   `command` to `device`.
   """
-  @callback exec(conn, command :: charlist, device :: atom | pid) :: :ok | {:error, binary}
+  @callback exec(conn, silent :: boolean, command :: charlist, device :: atom | pid) :: :ok | {:error, binary}
 
-  @callback write_file(conn, target :: charlist, content :: iodata, :write | :append) :: :ok | {:error, binary}
+  @callback write_file(conn, silent :: boolean, target :: charlist, content :: iodata, :write | :append) :: :ok | {:error, binary}
 
   @doc """
   Copies the local file `source` over to the destination `target` on the given
   connection.
   """
-  @callback copy(conn, source :: charlist, target :: charlist) :: :ok | {:error, binary}
+  @callback copy(conn, silent :: boolean, source :: charlist, target :: charlist) :: :ok | {:error, binary}
 
   @doc """
   Connects to authority.
@@ -68,9 +68,9 @@ defmodule Dicon.Executor do
       #=> :ok
 
   """
-  def exec(%__MODULE__{} = state, command, device \\ Process.group_leader()) do
+  def exec(%__MODULE__{} = state, silent, command, device \\ Process.group_leader()) do
     Mix.shell.info "==> EXEC #{command}"
-    run(state, :exec, [command, device])
+    run(state, :exec, [command, device], silent)
   end
 
   @doc """
@@ -80,23 +80,23 @@ defmodule Dicon.Executor do
   ## Examples
 
       state = Dicon.Executor.connect("meg:secret@example.com")
-      Dicon.Executor.copy(state, "hello.txt", "uploaded-hello.txt")
+      Dicon.Executor.copy(state, "hello.txt", "uploaded-hello.txt", false)
       #=> :ok
 
   """
-  def copy(%__MODULE__{} = state, source, target) do
+  def copy(%__MODULE__{} = state, silent, source, target) do
     Mix.shell.info "==> COPY #{source} #{target}"
-    run(state, :copy, [source, target])
+    run(state, :copy, [source, target], silent)
   end
 
-  def write_file(%__MODULE__{} = state, target, content, mode \\ :write)
+  def write_file(%__MODULE__{} = state, silent, target, content, mode \\ :write)
       when mode in [:write, :append] and (is_binary(content) or is_list(content)) do
     Mix.shell.info "==> WRITE #{target}"
-    run(state, :write_file, [target, content, mode])
+    run(state, :write_file, [target, content, mode], silent)
   end
 
-  defp run(%{executor: executor, conn: conn}, fun, args) do
-    case apply(executor, fun, [conn | args]) do
+  defp run(%{executor: executor, conn: conn}, fun, args, silent) do
+    case apply(executor, fun, [conn, silent | args]) do
       {:error, reason} -> raise_error(executor, reason)
       :ok              -> :ok
     end

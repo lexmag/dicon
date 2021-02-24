@@ -52,6 +52,6 @@ defmodule Mix.Tasks.Dicon.Switch do
 
   defp symlink(conn, source, target) do
     command = ["ln -snf ", source, ?\s, target]
-    Executor.exec(conn, command)
+    Executor.exec(conn, false, command)
   end
 end

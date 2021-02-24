@@ -25,44 +25,66 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
   alias Dicon.Executor
 
-  @options [strict: [only: :keep, skip: :keep]]
+  @options [strict: [only: :keep, skip: :keep, parallel: :boolean]]
 
   def run(argv) do
     case OptionParser.parse(argv, @options) do
       {opts, [source, version], []} ->
         target_dir = config(:target_dir)
-        for host <- config(:hosts, opts) do
-          host_config = host_config(host)
-          authority = Keyword.fetch!(host_config, :authority)
-          conn = Executor.connect(authority)
-          release_file = upload(conn, [source], target_dir)
-          target_dir = [target_dir, ?/, version]
-          unpack(conn, release_file, target_dir)
-          write_custom_config(conn, host_config, target_dir, version)
+
+        if opts[:parallel] do
+          :hosts
+          |> config(opts)
+          |> Enum.map(fn host ->
+            Task.async(fn ->
+              host_config = host_config(host)
+              authority = Keyword.fetch!(host_config, :authority)
+              conn = Executor.connect(authority)
+              release_file = upload(conn, [source], target_dir)
+              target_dir = [target_dir, ?/, version]
+              unpack(conn, release_file, target_dir)
+              write_custom_config(conn, host_config, target_dir, version)
+            end)
+          end)
+          |> Enum.each(&Task.await(&1, 360_000))
+        else
+          :hosts
+          |> config(opts)
+          |> Enum.map(fn host ->
+            host_config = host_config(host)
+            authority = Keyword.fetch!(host_config, :authority)
+            conn = Executor.connect(authority)
+            release_file = upload(conn, [source], target_dir)
+            target_dir = [target_dir, ?/, version]
+            unpack(conn, release_file, target_dir)
+            write_custom_config(conn, host_config, target_dir, version)
+          end)
         end
+
       {_opts, _commands, [switch | _]} ->
-        Mix.raise "Invalid option: " <> Mix.Dicon.switch_to_string(switch)
+        Mix.raise("Invalid option: " <> Mix.Dicon.switch_to_string(switch))
+
       {_opts, _commands, _errors} ->
-        Mix.raise "Expected two arguments (the tarball path and the version)"
+        Mix.raise("Expected two arguments (the tarball path and the version)")
     end
   end
 
   defp ensure_dir(conn, path) do
-    Executor.exec(conn, ["mkdir -p ", path])
+    Executor.exec(conn, false, ["mkdir -p ", path])
   end
 
-  defp upload(conn, source, target_dir) do
+  defp upload(conn, silent \\ false, source, target_dir) do
     ensure_dir(conn, target_dir)
     release_file = [target_dir, "/release.tar.gz"]
-    Executor.copy(conn, source, release_file)
+    Executor.copy(conn, silent, source, release_file)
     release_file
   end
 
   defp unpack(conn, release_file, target_dir) do
     ensure_dir(conn, target_dir)
     command = ["tar -C ", target_dir, " -zxf ", release_file]
-    Executor.exec(conn, command)
-    Executor.exec(conn, ["rm ", release_file])
+    Executor.exec(conn, false, command)
+    Executor.exec(conn, false, ["rm ", release_file])
   end
 
   defp write_custom_config(conn, host_config, target_dir, version) do
@@ -72,19 +94,22 @@ defmodule Mix.Tasks.Dicon.Deploy do
       # We use StringIO to receive "sys.config" content
       # that we can parse later.
       {:ok, device} = StringIO.open("")
-      Executor.exec(conn, ["cat ", sys_config_path], device)
+      Executor.exec(conn, false, ["cat ", sys_config_path], device)
       {:ok, {"", sys_config_content}} = StringIO.close(device)
       {:ok, device} = StringIO.open(sys_config_content)
-      sys_config = case :io.read(device, "") do
-        {:ok, sys_config} -> sys_config
-        {:error, _reason} -> Mix.raise("Could not parse \"sys.config\" file")
-        :eof -> Mix.raise("\"sys.config\" file is incomplete")
-      end
+
+      sys_config =
+        case :io.read(device, "") do
+          {:ok, sys_config} -> sys_config
+          {:error, _reason} -> Mix.raise("Could not parse \"sys.config\" file")
+          :eof -> Mix.raise("\"sys.config\" file is incomplete")
+        end
+
       {:ok, _} = StringIO.close(device)
 
       config = Mix.Config.merge(sys_config, config)
       content = :io_lib.format("~p.~n", [config])
-      Executor.write_file(conn, sys_config_path, content)
+      Executor.write_file(conn, false, sys_config_path, content)
     end
   end
 end

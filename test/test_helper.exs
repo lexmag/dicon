@@ -43,24 +43,24 @@ defmodule DiconTest.Case do
     {:ok, conn}
   end
 
-  def exec(conn, command, device) do
+  def exec(conn, silent, command, device) do
     command = List.to_string(command)
     run_callback(command, device)
-    notify_test({:dicon, conn, :exec, [command]})
+    notify_test({:dicon, conn, :exec, [command, silent]})
     :ok
   end
 
-  def write_file(conn, target, content, mode) do
+  def write_file(conn, silent, target, content, mode) do
     content = IO.iodata_to_binary(content)
     target = List.to_string(target)
-    notify_test({:dicon, conn, :write_file, [target, content, mode]})
+    notify_test({:dicon, conn, :write_file, [target, content, mode, silent]})
     :ok
   end
 
-  def copy(conn, source, target) do
+  def copy(conn, silent, source, target) do
     source = List.to_string(source)
     target = List.to_string(target)
-    notify_test({:dicon, conn, :copy, [source, target]})
+    notify_test({:dicon, conn, :copy, [source, target, silent]})
     :ok
   end
 

@@ -18,6 +18,7 @@ defmodule Dicon.Mixfile do
 
   defp package() do
     [maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
+    files: ~w(lib mix.exs README.md CHANGELOG.md LICENSE),
      licenses: ["ISC"],
      links: %{"GitHub" => "https://github.com/lexmag/dicon"}]
   end
