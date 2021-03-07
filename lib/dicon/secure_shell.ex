@@ -24,6 +24,8 @@ defmodule Dicon.SecureShell do
     * `:exec_timeout` - an integer that specifies the timeout (in milliseconds)
       when executing commands on the host.
 
+    * `:connect_options` - options to pass to `:ssh.connect/4`.
+
   The username and password user to connect to the server will be picked up by
   the URL that identifies that server (in `:dicon`'s configuration); read more
   about this in the documentation for the `Dicon` module.
@@ -45,10 +47,14 @@ defmodule Dicon.SecureShell do
     connect_timeout = Keyword.get(config, :connect_timeout, 5_000)
     write_timeout = Keyword.get(config, :write_timeout, 5_000)
     exec_timeout = Keyword.get(config, :exec_timeout, 5_000)
-    user_dir = Keyword.get(config, :dir, "~/.ssh") |> Path.expand
+    connect_options = Keyword.get(config, :connect_options, [])
+
+    user_dir = Keyword.get(config, :dir, "~/.ssh") |> Path.expand()
+
     {user, passwd, host, port} = parse_elements(authority)
     opts =
-      put_option([], :user, user)
+      connect_options
+      |> put_option(:user, user)
       |> put_option(:password, passwd)
       |> put_option(:user_dir, user_dir)
     host = String.to_charlist(host)
