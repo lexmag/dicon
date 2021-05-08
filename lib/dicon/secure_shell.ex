@@ -87,9 +87,7 @@ defmodule Dicon.SecureShell do
         :ok
 
       {:error, reason} ->
-        {:error,
-         "could not start ssh application: " <>
-           Application.format_error(reason)}
+        {:error, "could not start ssh application: " <> Application.format_error(reason)}
     end
   end
 
