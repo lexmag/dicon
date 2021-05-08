@@ -4,15 +4,14 @@ defmodule Mix.Tasks.Dicon.ControlTest do
   import Mix.Tasks.Dicon.Control, only: [run: 1]
 
   setup do
-    config = %{
+    put_dicon_env(%{
       otp_app: :sample,
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
       two: [authority: "two"]
-    }
+    })
 
-    Mix.Config.persist(dicon: config)
     :ok
   end
 
@@ -29,15 +28,13 @@ defmodule Mix.Tasks.Dicon.ControlTest do
   end
 
   test "hosts filtering" do
-    config = %{
+    put_dicon_env(%{
       otp_app: :sample,
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
       two: [authority: "two"]
-    }
-
-    Mix.Config.persist(dicon: config)
+    })
 
     run(["run", "--only", "one"])
     assert_receive {:dicon, ref, :connect, ["one"]}
@@ -80,14 +77,12 @@ defmodule Mix.Tasks.Dicon.ControlTest do
   end
 
   test "OS environment" do
-    config = %{
+    put_dicon_env(%{
       otp_app: :sample,
       target_dir: "test",
       hosts: [:one],
       one: [authority: "one", os_env: %{"IS_FOO" => "yes it is", "BAR" => "baz\"bong"}]
-    }
-
-    Mix.Config.persist(dicon: config)
+    })
 
     run(["run"])
     assert_receive {:dicon, ref, :connect, ["one"]}

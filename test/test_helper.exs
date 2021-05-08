@@ -19,7 +19,7 @@ defmodule DiconTest.Case do
 
   using _ do
     quote do
-      import unquote(__MODULE__), only: [flush_reply: 1, on_exec: 2]
+      import unquote(__MODULE__), only: [flush_reply: 1, on_exec: 2, put_dicon_env: 1]
     end
   end
 
@@ -89,6 +89,12 @@ defmodule DiconTest.Case do
     after
       50 -> :ok
     end
+  end
+
+  def put_dicon_env(config) do
+    # TODO: Use Application.put_all_env/2 when we
+    # dropped support for Elixir versions older than 1.9.
+    for {key, value} <- config, do: Application.put_env(:dicon, key, value)
   end
 
   defp run_callback(command, device) do

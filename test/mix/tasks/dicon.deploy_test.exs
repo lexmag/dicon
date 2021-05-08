@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Dicon.DeployTest do
   import Mix.Tasks.Dicon.Deploy, only: [run: 1]
 
   setup_all do
-    config = %{
+    put_dicon_env(%{
       target_dir: "test",
       hosts: [:one, :two],
       one: [
@@ -15,9 +15,8 @@ defmodule Mix.Tasks.Dicon.DeployTest do
       two: [
         authority: "two"
       ]
-    }
+    })
 
-    Mix.Config.persist(dicon: config)
     :ok
   end
 
