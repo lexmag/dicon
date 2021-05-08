@@ -7,6 +7,25 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    name: Code linting
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Elixir environment
+        uses: erlef/setup-elixir@v1
+        with:
+          otp-version: 20
+          elixir-version: 1.6
+
+      - name: Check format
+        run: mix format --check-formatted
+
+      - name: Check compilation warnings
+        run: mix compile --warnings-as-errors
+
   test:
     name: Test suite
     runs-on: ubuntu-16.04
