@@ -1,6 +1,6 @@
 # Digital Conveyor
 
-[![Build Status](https://travis-ci.org/lexmag/dicon.svg?branch=master "Build Status")](https://travis-ci.org/lexmag/dicon)
+![CI Status](https://github.com/lexmag/dicon/workflows/CI/badge.svg)
 
 Simple release deliverer for Elixir.
 
