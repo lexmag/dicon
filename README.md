@@ -1,6 +1,7 @@
 # Digital Conveyor
 
 ![CI Status](https://github.com/lexmag/dicon/workflows/CI/badge.svg)
+[![Hex Version](https://img.shields.io/hexpm/v/dicon.svg)](https://hex.pm/packages/dicon)
 
 Simple release deliverer for Elixir.
 
