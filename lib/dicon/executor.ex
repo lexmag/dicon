@@ -26,7 +26,8 @@ defmodule Dicon.Executor do
   """
   @callback exec(conn, command :: charlist, device :: atom | pid) :: :ok | {:error, binary}
 
-  @callback write_file(conn, target :: charlist, content :: iodata, :write | :append) :: :ok | {:error, binary}
+  @callback write_file(conn, target :: charlist, content :: iodata, :write | :append) ::
+              :ok | {:error, binary}
 
   @doc """
   Copies the local file `source` over to the destination `target` on the given
@@ -49,10 +50,12 @@ defmodule Dicon.Executor do
   @spec connect(binary) :: {:ok, t} | {:error, term}
   def connect(authority) do
     executor = Application.get_env(:dicon, :executor, SecureShell)
+
     case executor.connect(authority) do
       {:ok, conn} ->
-        Mix.shell.info "Connected to #{authority}"
+        Mix.shell().info("Connected to #{authority}")
         %__MODULE__{executor: executor, conn: conn}
+
       {:error, reason} ->
         raise_error(executor, reason)
     end
@@ -69,7 +72,7 @@ defmodule Dicon.Executor do
 
   """
   def exec(%__MODULE__{} = state, command, device \\ Process.group_leader()) do
-    Mix.shell.info "==> EXEC #{command}"
+    Mix.shell().info("==> EXEC #{command}")
     run(state, :exec, [command, device])
   end
 
@@ -85,24 +88,24 @@ defmodule Dicon.Executor do
 
   """
   def copy(%__MODULE__{} = state, source, target) do
-    Mix.shell.info "==> COPY #{source} #{target}"
+    Mix.shell().info("==> COPY #{source} #{target}")
     run(state, :copy, [source, target])
   end
 
   def write_file(%__MODULE__{} = state, target, content, mode \\ :write)
       when mode in [:write, :append] and (is_binary(content) or is_list(content)) do
-    Mix.shell.info "==> WRITE #{target}"
+    Mix.shell().info("==> WRITE #{target}")
     run(state, :write_file, [target, content, mode])
   end
 
   defp run(%{executor: executor, conn: conn}, fun, args) do
     case apply(executor, fun, [conn | args]) do
       {:error, reason} -> raise_error(executor, reason)
-      :ok              -> :ok
+      :ok -> :ok
     end
   end
 
   defp raise_error(executor, reason) when is_binary(reason) do
-    Mix.raise "(in #{inspect executor}) " <> reason
+    Mix.raise("(in #{inspect(executor)}) " <> reason)
   end
 end

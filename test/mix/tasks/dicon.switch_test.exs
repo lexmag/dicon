@@ -8,8 +8,9 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
-      two: [authority: "two"],
+      two: [authority: "two"]
     }
+
     Mix.Config.persist(dicon: config)
 
     run(["0.1.0"])
@@ -27,8 +28,9 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     config = %{
       target_dir: "/home/test",
       hosts: [:one],
-      one: [authority: "one"],
+      one: [authority: "one"]
     }
+
     Mix.Config.persist(dicon: config)
 
     run(["0.2.0"])
@@ -44,8 +46,9 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
-      two: [authority: "two"],
+      two: [authority: "two"]
     }
+
     Mix.Config.persist(dicon: config)
 
     run(["0.2.0", "--only", "one"])
@@ -71,7 +74,7 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     run(["0.2.0", "--skip", "one", "--skip", "two"])
     refute_receive {:dicon, _, _, _}
 
-    assert_raise Mix.Error, "unknown host: \"foo\"", fn ->
+    assert_raise Mix.Error, "Unknown host: \"foo\"", fn ->
       run(["0.2.0", "--skip", "foo", "--skip", "two"])
     end
   end

@@ -31,6 +31,7 @@ defmodule Mix.Tasks.Dicon.Deploy do
     case OptionParser.parse(argv, @options) do
       {opts, [source, version], []} ->
         target_dir = config(:target_dir)
+
         for host <- config(:hosts, opts) do
           host_config = host_config(host)
           authority = Keyword.fetch!(host_config, :authority)
@@ -40,10 +41,12 @@ defmodule Mix.Tasks.Dicon.Deploy do
           unpack(conn, release_file, target_dir)
           write_custom_config(conn, host_config, target_dir, version)
         end
+
       {_opts, _commands, [switch | _]} ->
-        Mix.raise "Invalid option: " <> Mix.Dicon.switch_to_string(switch)
+        Mix.raise("Invalid option: " <> Mix.Dicon.switch_to_string(switch))
+
       {_opts, _commands, _errors} ->
-        Mix.raise "Expected two arguments (the tarball path and the version)"
+        Mix.raise("Expected two arguments (the tarball path and the version)")
     end
   end
 
@@ -75,11 +78,14 @@ defmodule Mix.Tasks.Dicon.Deploy do
       Executor.exec(conn, ["cat ", sys_config_path], device)
       {:ok, {"", sys_config_content}} = StringIO.close(device)
       {:ok, device} = StringIO.open(sys_config_content)
-      sys_config = case :io.read(device, "") do
-        {:ok, sys_config} -> sys_config
-        {:error, _reason} -> Mix.raise("Could not parse \"sys.config\" file")
-        :eof -> Mix.raise("\"sys.config\" file is incomplete")
-      end
+
+      sys_config =
+        case :io.read(device, "") do
+          {:ok, sys_config} -> sys_config
+          {:error, _reason} -> Mix.raise("Could not parse \"sys.config\" file")
+          :eof -> Mix.raise("\"sys.config\" file is incomplete")
+        end
+
       {:ok, _} = StringIO.close(device)
 
       config = Mix.Config.merge(sys_config, config)

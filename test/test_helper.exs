@@ -25,13 +25,15 @@ defmodule DiconTest.Case do
 
   setup_all do
     Application.put_env(:dicon, :executor, __MODULE__)
+
     on_exit(fn ->
       Application.delete_env(:dicon, :executor)
     end)
   end
 
   setup do
-    Application.put_env(:dicon, __MODULE__, [test_pid: self()])
+    Application.put_env(:dicon, __MODULE__, test_pid: self())
+
     on_exit(fn ->
       Application.delete_env(:dicon, __MODULE__)
     end)
@@ -76,6 +78,7 @@ defmodule DiconTest.Case do
       :dicon
       |> Application.fetch_env!(__MODULE__)
       |> Keyword.update(:exec_callbacks, %{command => callback}, &Map.put(&1, command, callback))
+
     Application.put_env(:dicon, __MODULE__, env)
   end
 
@@ -91,10 +94,12 @@ defmodule DiconTest.Case do
   defp run_callback(command, device) do
     env = Application.fetch_env!(:dicon, __MODULE__)
     {callback, env} = pop_in(env, [:exec_callbacks, command])
+
     if callback do
       callback.(device)
       Application.put_env(:dicon, __MODULE__, env)
     end
+
     :ok
   end
 end
