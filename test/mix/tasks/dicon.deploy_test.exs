@@ -5,18 +5,18 @@ defmodule Mix.Tasks.Dicon.DeployTest do
   import Mix.Tasks.Dicon.Deploy, only: [run: 1]
 
   setup_all do
-    config = %{
+    put_dicon_env(%{
       target_dir: "test",
       hosts: [:one, :two],
       one: [
         authority: "one",
-        apps_env: [foo: [bar: "baz"]],
+        apps_env: [foo: [bar: "baz"]]
       ],
       two: [
-        authority: "two",
-      ],
-    }
-    Mix.Config.persist(dicon: config)
+        authority: "two"
+      ]
+    })
+
     :ok
   end
 
@@ -37,7 +37,13 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     assert_receive {:dicon, ^ref, :exec, ["tar -C test/0.1.0 -zxf " <> ^release_file]}
     assert_receive {:dicon, ^ref, :exec, ["rm " <> ^release_file]}
     assert_receive {:dicon, ^ref, :exec, ["cat test/0.1.0/releases/0.1.0/sys.config"]}
-    assert_receive {:dicon, ^ref, :write_file, ["test/0.1.0/releases/0.1.0/sys.config", "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n", :write]}
+
+    assert_receive {:dicon, ^ref, :write_file,
+                    [
+                      "test/0.1.0/releases/0.1.0/sys.config",
+                      "[{foo,[{qux,<<\"baz\">>},{bar,<<\"baz\">>}]}].\n",
+                      :write
+                    ]}
 
     assert_receive {:dicon, ref, :connect, ["two"]}
     assert_receive {:dicon, ^ref, :exec, ["mkdir -p test"]}
@@ -83,7 +89,7 @@ defmodule Mix.Tasks.Dicon.DeployTest do
     run([source, "0.1.0", "--skip", "one", "--skip", "two"])
     refute_receive {:dicon, _, _, _}
 
-    assert_raise Mix.Error, "unknown host: \"foo\"", fn ->
+    assert_raise Mix.Error, "Unknown host: \"foo\"", fn ->
       run([source, "0.1.0", "--skip", "foo", "--skip", "two"])
     end
   end

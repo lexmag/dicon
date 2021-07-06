@@ -19,19 +19,21 @@ defmodule DiconTest.Case do
 
   using _ do
     quote do
-      import unquote(__MODULE__), only: [flush_reply: 1, on_exec: 2]
+      import unquote(__MODULE__), only: [flush_reply: 1, on_exec: 2, put_dicon_env: 1]
     end
   end
 
   setup_all do
     Application.put_env(:dicon, :executor, __MODULE__)
+
     on_exit(fn ->
       Application.delete_env(:dicon, :executor)
     end)
   end
 
   setup do
-    Application.put_env(:dicon, __MODULE__, [test_pid: self()])
+    Application.put_env(:dicon, __MODULE__, test_pid: self())
+
     on_exit(fn ->
       Application.delete_env(:dicon, __MODULE__)
     end)
@@ -76,6 +78,7 @@ defmodule DiconTest.Case do
       :dicon
       |> Application.fetch_env!(__MODULE__)
       |> Keyword.update(:exec_callbacks, %{command => callback}, &Map.put(&1, command, callback))
+
     Application.put_env(:dicon, __MODULE__, env)
   end
 
@@ -88,13 +91,21 @@ defmodule DiconTest.Case do
     end
   end
 
+  def put_dicon_env(config) do
+    # TODO: Use Application.put_all_env/2 when we
+    # dropped support for Elixir versions older than 1.9.
+    for {key, value} <- config, do: Application.put_env(:dicon, key, value)
+  end
+
   defp run_callback(command, device) do
     env = Application.fetch_env!(:dicon, __MODULE__)
     {callback, env} = pop_in(env, [:exec_callbacks, command])
+
     if callback do
       callback.(device)
       Application.put_env(:dicon, __MODULE__, env)
     end
+
     :ok
   end
 end

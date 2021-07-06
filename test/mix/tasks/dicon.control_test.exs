@@ -4,14 +4,14 @@ defmodule Mix.Tasks.Dicon.ControlTest do
   import Mix.Tasks.Dicon.Control, only: [run: 1]
 
   setup do
-    config = %{
+    put_dicon_env(%{
       otp_app: :sample,
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
-      two: [authority: "two"],
-    }
-    Mix.Config.persist(dicon: config)
+      two: [authority: "two"]
+    })
+
     :ok
   end
 
@@ -28,14 +28,13 @@ defmodule Mix.Tasks.Dicon.ControlTest do
   end
 
   test "hosts filtering" do
-    config = %{
+    put_dicon_env(%{
       otp_app: :sample,
       target_dir: "test",
       hosts: [:one, :two],
       one: [authority: "one"],
-      two: [authority: "two"],
-    }
-    Mix.Config.persist(dicon: config)
+      two: [authority: "two"]
+    })
 
     run(["run", "--only", "one"])
     assert_receive {:dicon, ref, :connect, ["one"]}
@@ -60,7 +59,7 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     run(["run", "--skip", "one", "--skip", "two"])
     refute_receive {:dicon, _, _, _}
 
-    assert_raise Mix.Error, "unknown host: \"foo\"", fn ->
+    assert_raise Mix.Error, "Unknown host: \"foo\"", fn ->
       run(["run", "--skip", "foo", "--skip", "two"])
     end
   end
@@ -78,16 +77,17 @@ defmodule Mix.Tasks.Dicon.ControlTest do
   end
 
   test "OS environment" do
-    config = %{
+    put_dicon_env(%{
       otp_app: :sample,
       target_dir: "test",
       hosts: [:one],
-      one: [authority: "one", os_env: %{"IS_FOO" => "yes it is", "BAR" => "baz\"bong"}],
-    }
-    Mix.Config.persist(dicon: config)
+      one: [authority: "one", os_env: %{"IS_FOO" => "yes it is", "BAR" => "baz\"bong"}]
+    })
 
     run(["run"])
     assert_receive {:dicon, ref, :connect, ["one"]}
-    assert_receive {:dicon, ^ref, :exec, [~S(BAR="baz\"bong" IS_FOO="yes it is" test/current/bin/sample run)]}
+
+    assert_receive {:dicon, ^ref, :exec,
+                    [~S(BAR="baz\"bong" IS_FOO="yes it is" test/current/bin/sample run)]}
   end
 end

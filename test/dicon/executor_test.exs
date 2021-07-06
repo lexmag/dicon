@@ -59,6 +59,7 @@ defmodule Dicon.ExecutorTest do
     assert_receive {:mix_shell, :info, ["==> WRITE target"]}
 
     message = "(in Dicon.ExecutorTest.FakeExecutor) write failed"
+
     assert_raise Mix.Error, message, fn ->
       Executor.write_file(conn, 'fail', "fail")
     end

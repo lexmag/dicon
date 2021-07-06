@@ -79,7 +79,7 @@ defmodule Dicon do
 
     assert_filtered_hosts_exist(hosts, only ++ skip)
 
-    Enum.filter(hosts, hosts_selector(only, skip))
+    Enum.filter(hosts, host_selector(only, skip))
   end
 
   def config(key, _opts) do
@@ -91,16 +91,16 @@ defmodule Dicon do
   end
 
   defp assert_filtered_hosts_exist(hosts, filtered_hosts) do
-    if unknown_host = Enum.find(filtered_hosts, &not(&1 in hosts)) do
-      Mix.raise "unknown host: #{inspect(Atom.to_string(unknown_host))}"
+    if unknown_host = Enum.find(filtered_hosts, &(not (&1 in hosts))) do
+      Mix.raise("Unknown host: #{inspect(Atom.to_string(unknown_host))}")
     end
   end
 
-  defp hosts_selector([], skip) do
-    &not(&1 in skip)
+  defp host_selector([], skip) do
+    &(not (&1 in skip))
   end
 
-  defp hosts_selector(only, skip) do
+  defp host_selector(only, skip) do
     only = only -- skip
     &(&1 in only)
   end

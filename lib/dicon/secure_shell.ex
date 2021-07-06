@@ -33,13 +33,14 @@ defmodule Dicon.SecureShell do
 
   @behaviour Dicon.Executor
 
-  @file_chunk_size 100_000 # in bytes
+  # Size in bytes.
+  @file_chunk_size 100_000
 
   defstruct [
     :conn,
     :connect_timeout,
     :write_timeout,
-    :exec_timeout,
+    :exec_timeout
   ]
 
   def connect(authority) do
@@ -50,13 +51,14 @@ defmodule Dicon.SecureShell do
     connect_options = Keyword.get(config, :connect_options, [])
 
     user_dir = Keyword.get(config, :dir, "~/.ssh") |> Path.expand()
-
     {user, passwd, host, port} = parse_elements(authority)
+
     opts =
       connect_options
       |> put_option(:user, user)
       |> put_option(:password, passwd)
       |> put_option(:user_dir, user_dir)
+
     host = String.to_charlist(host)
 
     result =
@@ -66,8 +68,9 @@ defmodule Dicon.SecureShell do
           conn: conn,
           connect_timeout: connect_timeout,
           write_timeout: write_timeout,
-          exec_timeout: exec_timeout,
+          exec_timeout: exec_timeout
         }
+
         {:ok, state}
       end
 
@@ -75,37 +78,49 @@ defmodule Dicon.SecureShell do
   end
 
   defp put_option(opts, _key, nil), do: opts
+
   defp put_option(opts, key, value) do
     [{key, String.to_charlist(value)} | opts]
   end
 
   defp ensure_started() do
-    case :ssh.start do
-      :ok -> :ok
-      {:error, {:already_started, :ssh}} -> :ok
+    case :ssh.start() do
+      :ok ->
+        :ok
+
+      {:error, {:already_started, :ssh}} ->
+        :ok
+
       {:error, reason} ->
-        {:error, "could not start ssh application: " <>
-          Application.format_error(reason)}
+        {:error, "could not start ssh application: " <> Application.format_error(reason)}
     end
   end
 
   defp parse_elements(authority) do
-    parts = String.split(authority, "@", [parts: 2])
-    [user_info, host_info] = case parts do
-      [host_info] ->
-        ["", host_info]
-      result -> result
-    end
+    parts = String.split(authority, "@", parts: 2)
 
-    parts = String.split(user_info, ":", [parts: 2, trim: true])
+    [user_info, host_info] =
+      case parts do
+        [host_info] ->
+          ["", host_info]
+
+        result ->
+          result
+      end
+
+    parts = String.split(user_info, ":", parts: 2, trim: true)
     destructure([user, passwd], parts)
 
-    parts = String.split(host_info, ":", [parts: 2, trim: true])
-    {host, port} = case parts do
-      [host, port] ->
-        {host, String.to_integer(port)}
-      [host] -> {host, 22}
-    end
+    parts = String.split(host_info, ":", parts: 2, trim: true)
+
+    {host, port} =
+      case parts do
+        [host, port] ->
+          {host, String.to_integer(port)}
+
+        [host] ->
+          {host, 22}
+      end
 
     {user, passwd, host, port}
   end
@@ -115,8 +130,9 @@ defmodule Dicon.SecureShell do
 
     result =
       with {:ok, channel} <- :ssh_connection.session_channel(conn, connect_timeout),
-           :success <- :ssh_connection.exec(conn, channel, command, exec_timeout),
-        do: handle_reply(conn, channel, device, exec_timeout, _acc = [])
+           :success <- :ssh_connection.exec(conn, channel, command, exec_timeout) do
+        handle_reply(conn, channel, device, exec_timeout, _acc = [])
+      end
 
     format_if_error(result)
   end
@@ -125,10 +141,13 @@ defmodule Dicon.SecureShell do
     receive do
       {:ssh_cm, ^conn, {:data, ^channel, _code, data}} ->
         handle_reply(conn, channel, device, exec_timeout, [acc | data])
+
       {:ssh_cm, ^conn, {:eof, ^channel}} ->
         handle_reply(conn, channel, device, exec_timeout, acc)
+
       {:ssh_cm, ^conn, {:exit_status, ^channel, _status}} ->
         handle_reply(conn, channel, device, exec_timeout, acc)
+
       {:ssh_cm, ^conn, {:closed, ^channel}} ->
         IO.write(device, acc)
     after
@@ -151,8 +170,9 @@ defmodule Dicon.SecureShell do
       with {:ok, channel} <- :ssh_connection.session_channel(conn, connect_timeout),
            :success <- :ssh_connection.exec(conn, channel, command, exec_timeout),
            :ok <- :ssh_connection.send(conn, channel, content, exec_timeout),
-           :ok <- :ssh_connection.send_eof(conn, channel),
-           do: handle_reply(conn, channel, Process.group_leader(), exec_timeout, _acc = [])
+           :ok <- :ssh_connection.send_eof(conn, channel) do
+        handle_reply(conn, channel, Process.group_leader(), exec_timeout, _acc = [])
+      end
 
     format_if_error(result)
   end
@@ -173,8 +193,9 @@ defmodule Dicon.SecureShell do
              write_spinner(chunk_index, chunk_count)
            end),
            IO.write(IO.ANSI.format([:clear_line, ?\r])),
-           :ok <- :ssh_connection.send_eof(conn, channel),
-           do: handle_reply(conn, channel, Process.group_leader(), exec_timeout, _acc = [])
+           :ok <- :ssh_connection.send_eof(conn, channel) do
+        handle_reply(conn, channel, Process.group_leader(), exec_timeout, _acc = [])
+      end
 
     format_if_error(result)
   end
@@ -184,6 +205,7 @@ defmodule Dicon.SecureShell do
   defp write_spinner(index, count) do
     percent = round(100 * index / count)
     spinner = elem(@spinner_chars, rem(index, tuple_size(@spinner_chars)))
+
     [:clear_line, ?\r, spinner, ?\s, Integer.to_string(percent), ?%]
     |> IO.ANSI.format()
     |> IO.write()
@@ -201,12 +223,11 @@ defmodule Dicon.SecureShell do
     case :inet.format_error(reason) do
       'unknown POSIX error' ->
         {:error, inspect(reason)}
+
       message ->
         {:error, List.to_string(message)}
     end
   end
 
-  defp format_if_error(non_error) do
-    non_error
-  end
+  defp format_if_error(other), do: other
 end
