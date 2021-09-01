@@ -60,6 +60,12 @@ defmodule Mix.Tasks.Dicon.Deploy do
     end
   end
 
+  defp parallel_deploy([first], target_dir, version, source, opts) do
+    timeout = Keyword.get(opts, :timeout, :infinity)
+    task = Task.async(fn -> deploy(first, source, target_dir, version, false) end)
+    Task.await(task, timeout)
+  end
+
   defp parallel_deploy(hosts, target_dir, version, source, opts) do
     timeout = Keyword.get(opts, :timeout, :infinity)
     [first | hosts] = hosts
