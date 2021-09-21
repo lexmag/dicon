@@ -13,10 +13,10 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
 
     run(["0.1.0"])
 
-    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ref, :connect, ["one", []]}
     assert_receive {:dicon, ^ref, :exec, ["ln -snf $PWD/test/0.1.0 $PWD/test/current"]}
 
-    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ref, :connect, ["two", []]}
     assert_receive {:dicon, ^ref, :exec, ["ln -snf $PWD/test/0.1.0 $PWD/test/current"]}
 
     refute_receive {:dicon, _, _, _}
@@ -31,7 +31,7 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
 
     run(["0.2.0"])
 
-    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ref, :connect, ["one", []]}
     assert_receive {:dicon, ^ref, :exec, ["ln -snf /home/test/0.2.0 /home/test/current"]}
 
     refute_receive {:dicon, _, _, _}
@@ -46,12 +46,12 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     })
 
     run(["0.2.0", "--only", "one"])
-    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ref, :connect, ["one", []]}
     :ok = flush_reply(ref)
     refute_receive {:dicon, _, _, _}
 
     run(["0.2.0", "--skip", "one"])
-    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ref, :connect, ["two", []]}
     :ok = flush_reply(ref)
     refute_receive {:dicon, _, _, _}
 
@@ -59,9 +59,9 @@ defmodule Mix.Tasks.Dicon.SwitchTest do
     refute_receive {:dicon, _, _, _}
 
     run(["0.2.0", "--only", "one", "--only", "two"])
-    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ref, :connect, ["one", []]}
     :ok = flush_reply(ref)
-    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ref, :connect, ["two", []]}
     :ok = flush_reply(ref)
     refute_receive {:dicon, _, _, _}
 

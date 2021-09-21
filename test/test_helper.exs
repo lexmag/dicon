@@ -39,12 +39,14 @@ defmodule DiconTest.Case do
     end)
   end
 
-  def connect(authority) do
+  @impl true
+  def connect(authority, config) do
     conn = make_ref()
-    notify_test({:dicon, conn, :connect, [authority]})
+    notify_test({:dicon, conn, :connect, [authority, config]})
     {:ok, conn}
   end
 
+  @impl true
   def exec(conn, command, device) do
     command = List.to_string(command)
     run_callback(command, device)
@@ -52,6 +54,7 @@ defmodule DiconTest.Case do
     :ok
   end
 
+  @impl true
   def write_file(conn, target, content, mode) do
     content = IO.iodata_to_binary(content)
     target = List.to_string(target)
@@ -59,6 +62,7 @@ defmodule DiconTest.Case do
     :ok
   end
 
+  @impl true
   def copy(conn, source, target) do
     source = List.to_string(source)
     target = List.to_string(target)

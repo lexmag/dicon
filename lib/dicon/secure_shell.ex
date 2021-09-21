@@ -41,7 +41,8 @@ defmodule Dicon.SecureShell do
     :exec_timeout
   ]
 
-  def connect(authority) do
+  @impl true
+  def connect(authority, _host_config) do
     config = Application.get_env(:dicon, __MODULE__, [])
     connect_timeout = Keyword.get(config, :connect_timeout, 5_000)
     write_timeout = Keyword.get(config, :write_timeout, 5_000)
@@ -120,6 +121,7 @@ defmodule Dicon.SecureShell do
     {user, passwd, host, port}
   end
 
+  @impl true
   def exec(%__MODULE__{} = state, command, device) do
     %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 
@@ -150,6 +152,7 @@ defmodule Dicon.SecureShell do
     end
   end
 
+  @impl true
   def write_file(%__MODULE__{} = state, target, content, :append) do
     write_file(state, ["cat >> ", target], content)
   end
@@ -172,6 +175,7 @@ defmodule Dicon.SecureShell do
     format_if_error(result)
   end
 
+  @impl true
   def copy(%__MODULE__{} = state, source, target) do
     %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 

@@ -29,8 +29,9 @@ defmodule Mix.Tasks.Dicon.Control do
       {opts, [command], []} ->
         for host <- config(:hosts, opts) do
           host_config = host_config(host)
-          authority = Keyword.fetch!(host_config, :authority)
-          conn = Executor.connect(authority)
+          {authority, host_config} = Keyword.pop(host_config, :authority)
+
+          conn = Executor.connect(authority, host_config)
           exec(conn, host_config, config(:target_dir), command)
         end
 

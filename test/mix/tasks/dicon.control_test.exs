@@ -18,10 +18,10 @@ defmodule Mix.Tasks.Dicon.ControlTest do
   test "commands are run and feedback is received" do
     run(["run"])
 
-    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ref, :connect, ["one", []]}
     assert_receive {:dicon, ^ref, :exec, ["test/current/bin/sample run"]}
 
-    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ref, :connect, ["two", []]}
     assert_receive {:dicon, ^ref, :exec, ["test/current/bin/sample run"]}
 
     refute_receive {:dicon, _, _, _}
@@ -37,12 +37,12 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     })
 
     run(["run", "--only", "one"])
-    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ref, :connect, ["one", []]}
     :ok = flush_reply(ref)
     refute_receive {:dicon, _, _, _}
 
     run(["run", "--skip", "one"])
-    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ref, :connect, ["two", []]}
     :ok = flush_reply(ref)
     refute_receive {:dicon, _, _, _}
 
@@ -50,9 +50,9 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     refute_receive {:dicon, _, _, _}
 
     run(["run", "--only", "one", "--only", "two"])
-    assert_receive {:dicon, ref, :connect, ["one"]}
+    assert_receive {:dicon, ref, :connect, ["one", []]}
     :ok = flush_reply(ref)
-    assert_receive {:dicon, ref, :connect, ["two"]}
+    assert_receive {:dicon, ref, :connect, ["two", []]}
     :ok = flush_reply(ref)
     refute_receive {:dicon, _, _, _}
 
@@ -85,7 +85,9 @@ defmodule Mix.Tasks.Dicon.ControlTest do
     })
 
     run(["run"])
-    assert_receive {:dicon, ref, :connect, ["one"]}
+
+    assert_receive {:dicon, ref, :connect,
+                    ["one", [os_env: %{"IS_FOO" => "yes it is", "BAR" => "baz\"bong"}]]}
 
     assert_receive {:dicon, ^ref, :exec,
                     [~S(BAR="baz\"bong" IS_FOO="yes it is" test/current/bin/sample run)]}
