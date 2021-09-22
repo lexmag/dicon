@@ -18,7 +18,7 @@ defmodule Dicon.Executor do
   Connects to the given authority, returning a term that identifies the
   connection.
   """
-  @callback connect(authority :: binary) :: {:ok, conn} | {:error, binary}
+  @callback connect(authority :: binary, options :: Keyword.t()) :: {:ok, conn} | {:error, binary}
 
   @doc """
   Executes the given `command` on the given connection, writing the output of
@@ -47,11 +47,11 @@ defmodule Dicon.Executor do
       %Dicon.Executor{} = Dicon.Executor.connect("meg:secret@example.com")
 
   """
-  @spec connect(binary) :: {:ok, t} | {:error, term}
-  def connect(authority) do
+  @spec connect(binary, Keyword.t()) :: t
+  def connect(authority, host_config \\ []) do
     executor = Application.get_env(:dicon, :executor, SecureShell)
 
-    case executor.connect(authority) do
+    case executor.connect(authority, host_config) do
       {:ok, conn} ->
         Mix.shell().info("Connected to #{authority}")
         %__MODULE__{executor: executor, conn: conn}

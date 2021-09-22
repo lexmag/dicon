@@ -41,41 +41,104 @@ defmodule Dicon.SecureShell do
     :exec_timeout
   ]
 
-  def connect(authority) do
+  @localhost {127, 0, 0, 1}
+
+  @impl true
+  def connect(authority, host_config) do
     config = Application.get_env(:dicon, __MODULE__, [])
     connect_timeout = Keyword.get(config, :connect_timeout, 5_000)
     write_timeout = Keyword.get(config, :write_timeout, 5_000)
     exec_timeout = Keyword.get(config, :exec_timeout, 5_000)
-    user_dir = Keyword.get(config, :dir, "~/.ssh") |> Path.expand()
-    {user, passwd, host, port} = parse_elements(authority)
+    user_dir = config |> Keyword.get(:dir, "~/.ssh") |> Path.expand() |> String.to_charlist()
+    connect_options = put_option([], :user_dir, user_dir)
 
-    opts =
-      put_option([], :user, user)
-      |> put_option(:password, passwd)
-      |> put_option(:user_dir, user_dir)
+    target_authority = parse_authority(authority)
 
-    host = String.to_charlist(host)
-
-    result =
-      with :ok <- ensure_started(),
-           {:ok, conn} <- :ssh.connect(host, port, opts, connect_timeout) do
-        state = %__MODULE__{
-          conn: conn,
-          connect_timeout: connect_timeout,
-          write_timeout: write_timeout,
-          exec_timeout: exec_timeout
-        }
-
-        {:ok, state}
+    jump_authority =
+      case Keyword.fetch(host_config, :jump_authority) do
+        {:ok, jump_authority} -> parse_authority(jump_authority)
+        :error -> nil
       end
 
-    format_if_error(result)
+    with :ok <- ensure_started(),
+         {:ok, conn} <-
+           connect(target_authority, jump_authority, connect_options, connect_timeout) do
+      state = %__MODULE__{
+        conn: conn,
+        connect_timeout: connect_timeout,
+        write_timeout: write_timeout,
+        exec_timeout: exec_timeout
+      }
+
+      {:ok, state}
+    else
+      error ->
+        format_if_error(error)
+    end
   end
 
-  defp put_option(opts, _key, nil), do: opts
+  defp connect({user, password, host, port}, connect_options, connect_timeout) do
+    connect_options =
+      connect_options
+      |> put_option(:user, user)
+      |> put_option(:password, password)
 
-  defp put_option(opts, key, value) do
-    [{key, String.to_charlist(value)} | opts]
+    :ssh.connect(host, port, connect_options, connect_timeout)
+  end
+
+  defp connect(target_authority, nil, connect_options, connect_timeout) do
+    connect(target_authority, connect_options, connect_timeout, 0)
+  end
+
+  if Code.ensure_loaded?(:ssh) and function_exported?(:ssh, :tcpip_tunnel_to_server, 6) do
+    defp connect(target_authority, jump_authority, connect_options, connect_timeout) do
+      {target_user, target_password, target_host, target_port} = target_authority
+
+      with {:ok, jump_conn} <- connect(jump_authority, connect_options, connect_timeout),
+           {:ok, tunnel_port} <-
+             :ssh.tcpip_tunnel_to_server(
+               jump_conn,
+               @localhost,
+               0,
+               target_host,
+               target_port,
+               connect_timeout
+             ) do
+        # Wait a bit for the tunnel to be available.
+        Process.sleep(1_000)
+        tunnel_authority = {target_user, target_password, @localhost, tunnel_port}
+
+        connect_options =
+          connect_options
+          |> Keyword.put(:silently_accept_hosts, true)
+          |> Keyword.put(:save_accepted_host, false)
+
+        connect_to_tunnel(tunnel_authority, connect_options, connect_timeout)
+      end
+    end
+
+    defp connect_to_tunnel(authority, connect_options, connect_timeout, retries \\ 2) do
+      with {:error, :timeout} <- connect(authority, connect_options, connect_timeout) do
+        if retries > 0 do
+          Process.sleep(1_000)
+          connect_to_tunnel(authority, connect_options, connect_timeout, retries - 1)
+        else
+          {:error, :timeout}
+        end
+      end
+    end
+  else
+    defp connect(_target_authority, _jump_authority, _connect_options, _connect_timeout) do
+      {:error, ":jump_authority option is only supported in OTP 23+"}
+    end
+  end
+
+  defp put_option(options, key, value) do
+    if value do
+      Keyword.put(options, key, value)
+    else
+      options
+    end
   end
 
   defp ensure_started() do
@@ -91,35 +154,24 @@ defmodule Dicon.SecureShell do
     end
   end
 
-  defp parse_elements(authority) do
-    parts = String.split(authority, "@", parts: 2)
-
-    [user_info, host_info] =
-      case parts do
-        [host_info] ->
-          ["", host_info]
-
-        result ->
-          result
-      end
+  defp parse_authority(authority) do
+    %URI{host: host, port: port, userinfo: user_info} = URI.parse("ssh://" <> authority)
 
     parts = String.split(user_info, ":", parts: 2, trim: true)
-    destructure([user, passwd], parts)
+    destructure([user, password], parts)
 
-    parts = String.split(host_info, ":", parts: 2, trim: true)
-
-    {host, port} =
-      case parts do
-        [host, port] ->
-          {host, String.to_integer(port)}
-
-        [host] ->
-          {host, 22}
-      end
-
-    {user, passwd, host, port}
+    {maybe_to_charlist(user), maybe_to_charlist(password), maybe_to_charlist(host), port || 22}
   end
 
+  defp maybe_to_charlist(value) do
+    if is_binary(value) do
+      String.to_charlist(value)
+    else
+      value
+    end
+  end
+
+  @impl true
   def exec(%__MODULE__{} = state, command, device) do
     %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 
@@ -150,6 +202,7 @@ defmodule Dicon.SecureShell do
     end
   end
 
+  @impl true
   def write_file(%__MODULE__{} = state, target, content, :append) do
     write_file(state, ["cat >> ", target], content)
   end
@@ -172,6 +225,7 @@ defmodule Dicon.SecureShell do
     format_if_error(result)
   end
 
+  @impl true
   def copy(%__MODULE__{} = state, source, target) do
     %{conn: conn, connect_timeout: connect_timeout, exec_timeout: exec_timeout} = state
 

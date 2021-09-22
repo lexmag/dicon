@@ -34,8 +34,8 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
         for host <- config(:hosts, opts) do
           host_config = host_config(host)
-          authority = Keyword.fetch!(host_config, :authority)
-          conn = Executor.connect(authority)
+          {authority, host_config} = Keyword.pop(host_config, :authority)
+          conn = Executor.connect(authority, host_config)
           release_file = upload(conn, [source], target_dir)
           target_dir = [target_dir, ?/, version]
           unpack(conn, release_file, target_dir)

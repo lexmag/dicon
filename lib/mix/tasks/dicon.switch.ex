@@ -40,8 +40,8 @@ defmodule Mix.Tasks.Dicon.Switch do
           end
 
         for host <- config(:hosts, opts) do
-          authority = Keyword.fetch!(host_config(host), :authority)
-          conn = Executor.connect(authority)
+          {authority, host_config} = Keyword.pop(host_config(host), :authority)
+          conn = Executor.connect(authority, host_config)
           symlink(conn, [target_dir, ?/, version], [target_dir, "/current"])
         end
 
