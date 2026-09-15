@@ -24,9 +24,12 @@ defmodule Dicon.SecureShell do
     * `:exec_timeout` - an integer that specifies the timeout (in milliseconds)
       when executing commands on the host.
 
-  The username and password user to connect to the server will be picked up by
+  The username and password used to connect to the server will be picked up by
   the URL that identifies that server (in `:dicon`'s configuration); read more
   about this in the documentation for the `Dicon` module.
+
+  The additionally supported `:silently_accept_hosts` and `:save_accepted_host` options are
+  documented in [the SSH application](https://www.erlang.org/doc/apps/ssh/ssh.html#t:host_accepting_client_options/0).
   """
 
   @behaviour Dicon.Executor
@@ -47,11 +50,13 @@ defmodule Dicon.SecureShell do
     write_timeout = Keyword.get(config, :write_timeout, 5_000)
     exec_timeout = Keyword.get(config, :exec_timeout, 5_000)
     user_dir = Keyword.get(config, :dir, "~/.ssh") |> Path.expand()
-    {user, passwd, host, port} = parse_elements(authority)
+    {user, password, host, port} = parse_elements(authority)
 
     opts =
-      put_option([], :user, user)
-      |> put_option(:password, passwd)
+      config
+      |> Keyword.take([:silently_accept_hosts, :save_accepted_host])
+      |> put_option(:user, user)
+      |> put_option(:password, password)
       |> put_option(:user_dir, user_dir)
 
     host = String.to_charlist(host)
