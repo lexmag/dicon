@@ -20,7 +20,6 @@ defmodule Dicon.Mixfile do
 
   defp package() do
     [
-      maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
       licenses: ["ISC"],
       links: %{"GitHub" => "https://github.com/lexmag/dicon"}
     ]

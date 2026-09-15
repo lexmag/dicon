@@ -216,7 +216,7 @@ defmodule Dicon.SecureShell do
 
   defp format_if_error({:error, reason}) do
     case :inet.format_error(reason) do
-      'unknown POSIX error' ->
+      ~c"unknown POSIX error" ->
         {:error, inspect(reason)}
 
       message ->

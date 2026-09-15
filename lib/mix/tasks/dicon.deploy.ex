@@ -88,7 +88,7 @@ defmodule Mix.Tasks.Dicon.Deploy do
 
       {:ok, _} = StringIO.close(device)
 
-      config = Mix.Config.merge(sys_config, config)
+      config = Config.Reader.merge(sys_config, config)
       content = :io_lib.format("~p.~n", [config])
       Executor.write_file(conn, sys_config_path, content)
     end
