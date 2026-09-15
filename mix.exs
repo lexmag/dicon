@@ -5,7 +5,7 @@ defmodule Dicon.Mixfile do
     [
       app: :dicon,
       version: "0.5.0",
-      elixir: "~> 1.3",
+      elixir: "~> 1.12",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       package: package(),
