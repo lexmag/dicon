@@ -1,27 +1,34 @@
 defmodule Dicon.Mixfile do
   use Mix.Project
 
+  @version "0.6.0"
+  @source_url "https://github.com/lexmag/dicon"
+
   def project() do
     [
       app: :dicon,
-      version: "0.5.0",
+      version: @version,
       elixir: "~> 1.12",
-      build_embedded: Mix.env() == :prod,
-      start_permanent: Mix.env() == :prod,
-      package: package(),
       deps: deps(),
+
+      # Docs
+      name: "Dicon",
+      docs: docs(),
+
+      # Hexpm
+      package: package(),
       description: description()
     ]
   end
 
   def application() do
-    [applications: [:logger, :ssh]]
+    [extra_applications: [:logger, :ssh]]
   end
 
   defp package() do
     [
       licenses: ["ISC"],
-      links: %{"GitHub" => "https://github.com/lexmag/dicon"}
+      links: %{"GitHub" => @source_url}
     ]
   end
 
@@ -31,8 +38,16 @@ defmodule Dicon.Mixfile do
 
   defp deps() do
     [
-      {:earmark, ">= 0.0.0", only: :docs},
-      {:ex_doc, ">= 0.0.0", only: :docs}
+      {:ex_doc, "~> 0.40.0", only: :docs, runtime: false}
+    ]
+  end
+
+  defp docs() do
+    [
+      main: "Dicon",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      extras: ["CHANGELOG.md"]
     ]
   end
 end

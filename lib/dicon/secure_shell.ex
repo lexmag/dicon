@@ -29,7 +29,7 @@ defmodule Dicon.SecureShell do
   about this in the documentation for the `Dicon` module.
 
   The additionally supported `:silently_accept_hosts` and `:save_accepted_host` options are
-  documented in [the SSH application](https://www.erlang.org/doc/apps/ssh/ssh.html#t:host_accepting_client_options/0).
+  documented in `t::ssh.host_accepting_client_options/0`.
   """
 
   @behaviour Dicon.Executor
